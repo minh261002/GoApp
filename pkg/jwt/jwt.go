@@ -9,9 +9,11 @@ import (
 )
 
 type Claims struct {
-	UserID   uint   `json:"user_id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
+	UserID    uint   `json:"user_id"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
+	SessionID string `json:"session_id"`
 	jwt.RegisteredClaims
 }
 
@@ -30,7 +32,7 @@ func NewJWTManager() *JWTManager {
 }
 
 // GenerateToken tạo JWT token mới
-func (j *JWTManager) GenerateToken(userID uint, username, email string) (string, error) {
+func (j *JWTManager) GenerateToken(userID uint, username, email, role, sessionID string) (string, error) {
 	expireHours := 24
 	if hours := os.Getenv("JWT_EXPIRE_HOURS"); hours != "" {
 		if h, err := time.ParseDuration(hours + "h"); err == nil {
@@ -39,9 +41,11 @@ func (j *JWTManager) GenerateToken(userID uint, username, email string) (string,
 	}
 
 	claims := Claims{
-		UserID:   userID,
-		Username: username,
-		Email:    email,
+		UserID:    userID,
+		Username:  username,
+		Email:     email,
+		Role:      role,
+		SessionID: sessionID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(expireHours) * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -82,5 +86,5 @@ func (j *JWTManager) RefreshToken(tokenString string) (string, error) {
 	}
 
 	// Tạo token mới với thông tin từ token cũ
-	return j.GenerateToken(claims.UserID, claims.Username, claims.Email)
+	return j.GenerateToken(claims.UserID, claims.Username, claims.Email, claims.Role, claims.SessionID)
 }
