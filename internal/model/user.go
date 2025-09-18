@@ -1,0 +1,62 @@
+package model
+
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// User represents user model
+type User struct {
+	ID            uint           `json:"id" gorm:"primaryKey"`
+	Username      string         `json:"username" gorm:"uniqueIndex;size:50;not null" validate:"required,username"`
+	Email         string         `json:"email" gorm:"uniqueIndex;size:100;not null" validate:"required,email"`
+	Password      string         `json:"-" gorm:"size:255;not null" validate:"required,password"`
+	FirstName     string         `json:"first_name" gorm:"size:50" validate:"max=50"`
+	LastName      string         `json:"last_name" gorm:"size:50" validate:"max=50"`
+	Phone         string         `json:"phone" gorm:"size:20" validate:"phone"`
+	Avatar        string         `json:"avatar" gorm:"size:255"`
+	Role          string         `json:"role" gorm:"size:20;default:user" validate:"oneof=user admin moderator"`
+	IsActive      bool           `json:"is_active" gorm:"default:true"`
+	IsEmailVerified bool         `json:"is_email_verified" gorm:"default:false"`
+	LastLogin     *time.Time     `json:"last_login,omitempty"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+
+	// Relations
+	Sessions []Session `json:"sessions,omitempty" gorm:"foreignKey:UserID"`
+	OTPs     []OTP     `json:"otps,omitempty" gorm:"foreignKey:UserID"`
+}
+
+// TableName returns the table name for User model
+func (User) TableName() string {
+	return "users"
+}
+
+// BeforeCreate hook runs before creating a user
+func (u *User) BeforeCreate(tx *gorm.DB) error {
+	// Set default role if not specified
+	if u.Role == "" {
+		u.Role = "user"
+	}
+	return nil
+}
+
+// GetFullName returns the full name of the user
+func (u *User) GetFullName() string {
+	if u.FirstName != "" && u.LastName != "" {
+		return u.FirstName + " " + u.LastName
+	}
+	return u.Username
+}
+
+// IsAdmin checks if user is admin
+func (u *User) IsAdmin() bool {
+	return u.Role == "admin"
+}
+
+// IsModerator checks if user is moderator or admin
+func (u *User) IsModerator() bool {
+	return u.Role == "moderator" || u.Role == "admin"
+}
