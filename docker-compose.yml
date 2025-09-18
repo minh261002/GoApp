@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: go_app_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: go_app_db
+      MYSQL_USER: go_app_user
+      MYSQL_PASSWORD: go_app_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./migrations:/docker-entrypoint-initdb.d
+    networks:
+      - go_app_network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      timeout: 20s
+      retries: 10
+
+  # Golang Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go_app_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=go_app_user
+      - DB_PASSWORD=go_app_password
+      - DB_NAME=go_app_db
+      - GIN_MODE=release
+      - PORT=8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - go_app_network
+    volumes:
+      - ./logs:/app/logs
+
+  # Redis 
+  redis:
+    image: redis:7-alpine
+    container_name: go_app_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - go_app_network
+    command: redis-server --appendonly yes
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  go_app_network:
+    driver: bridge
