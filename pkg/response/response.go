@@ -195,3 +195,22 @@ func HealthCheck(c *gin.Context) {
 		"message": "Service is running",
 	})
 }
+
+// ErrorResponse trả về response lỗi với status code tùy chỉnh
+func ErrorResponse(c *gin.Context, statusCode int, message string, err ...interface{}) {
+	Error(c, statusCode, message, err...)
+}
+
+// SuccessResponse trả về response thành công với status code tùy chỉnh
+func SuccessResponse(c *gin.Context, statusCode int, message string, data interface{}) {
+	msg := "Success"
+	if message != "" {
+		msg = message
+	}
+
+	c.JSON(statusCode, Response{
+		Success: true,
+		Message: msg,
+		Data:    data,
+	})
+}

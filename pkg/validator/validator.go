@@ -180,3 +180,11 @@ func getErrorMessage(err validator.FieldError) string {
 		return fmt.Sprintf("%s không hợp lệ", err.Field())
 	}
 }
+
+// Global validator instance
+var defaultValidator = NewCustomValidator()
+
+// ValidateStruct validates a struct using the default validator
+func ValidateStruct(s interface{}) error {
+	return defaultValidator.ValidateStruct(s)
+}
