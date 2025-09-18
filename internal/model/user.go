@@ -8,21 +8,21 @@ import (
 
 // User represents user model
 type User struct {
-	ID            uint           `json:"id" gorm:"primaryKey"`
-	Username      string         `json:"username" gorm:"uniqueIndex;size:50;not null" validate:"required,username"`
-	Email         string         `json:"email" gorm:"uniqueIndex;size:100;not null" validate:"required,email"`
-	Password      string         `json:"-" gorm:"size:255;not null" validate:"required,password"`
-	FirstName     string         `json:"first_name" gorm:"size:50" validate:"max=50"`
-	LastName      string         `json:"last_name" gorm:"size:50" validate:"max=50"`
-	Phone         string         `json:"phone" gorm:"size:20" validate:"phone"`
-	Avatar        string         `json:"avatar" gorm:"size:255"`
-	Role          string         `json:"role" gorm:"size:20;default:user" validate:"oneof=user admin moderator"`
-	IsActive      bool           `json:"is_active" gorm:"default:true"`
-	IsEmailVerified bool         `json:"is_email_verified" gorm:"default:false"`
-	LastLogin     *time.Time     `json:"last_login,omitempty"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+	ID              uint           `json:"id" gorm:"primaryKey"`
+	Username        string         `json:"username" gorm:"uniqueIndex;size:50;not null" validate:"required,username"`
+	Email           string         `json:"email" gorm:"uniqueIndex;size:100;not null" validate:"required,email"`
+	Password        string         `json:"-" gorm:"size:255;not null" validate:"required,password"`
+	FirstName       string         `json:"first_name" gorm:"size:50" validate:"max=50"`
+	LastName        string         `json:"last_name" gorm:"size:50" validate:"max=50"`
+	Phone           string         `json:"phone" gorm:"size:20" validate:"phone"`
+	Avatar          string         `json:"avatar" gorm:"size:255"`
+	Role            string         `json:"role" gorm:"size:20;default:user" validate:"oneof=user admin moderator"`
+	IsActive        bool           `json:"is_active" gorm:"default:true"`
+	IsEmailVerified bool           `json:"is_email_verified" gorm:"default:false"`
+	LastLogin       *time.Time     `json:"last_login,omitempty"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
 
 	// Relations
 	Sessions []Session `json:"sessions,omitempty" gorm:"foreignKey:UserID"`
