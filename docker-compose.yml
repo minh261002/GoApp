@@ -44,6 +44,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - go_app_network
     volumes:
@@ -61,6 +63,11 @@ services:
     networks:
       - go_app_network
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 5s
+      retries: 5
+      interval: 10s
 
 volumes:
   mysql_data:
