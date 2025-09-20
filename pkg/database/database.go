@@ -121,6 +121,7 @@ func Migrate() error {
 		&model.Session{},
 		&model.OTP{},
 		&model.Brand{},
+		&model.Category{},
 		// Add more models here as needed
 	}
 
