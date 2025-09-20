@@ -3,13 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"go_app/internal/app"
+	"go_app/pkg/logger"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"go_app/internal/app"
-	"go_app/pkg/logger"
 )
 
 func main() {
