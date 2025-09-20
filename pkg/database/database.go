@@ -133,6 +133,12 @@ func Migrate() error {
 		&model.RolePermission{},
 		&model.UserPermission{},
 		&model.PermissionLog{},
+		&model.Order{},
+		&model.OrderItem{},
+		&model.Cart{},
+		&model.CartItem{},
+		&model.Payment{},
+		&model.ShippingHistory{},
 		// Add more models here as needed
 	}
 
