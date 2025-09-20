@@ -214,3 +214,27 @@ func SuccessResponse(c *gin.Context, statusCode int, message string, data interf
 		Data:    data,
 	})
 }
+
+// SuccessResponseWithPagination trả về response thành công với phân trang
+func SuccessResponseWithPagination(c *gin.Context, statusCode int, message string, data interface{}, page, limit int, total int64) {
+	msg := "Success"
+	if message != "" {
+		msg = message
+	}
+
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+
+	meta := &Meta{
+		Page:       page,
+		Limit:      limit,
+		Total:      total,
+		TotalPages: totalPages,
+	}
+
+	c.JSON(statusCode, Response{
+		Success: true,
+		Message: msg,
+		Data:    data,
+		Meta:    meta,
+	})
+}

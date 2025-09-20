@@ -125,6 +125,9 @@ func Migrate() error {
 		&model.Product{},
 		&model.ProductVariant{},
 		&model.ProductAttribute{},
+		&model.InventoryMovement{},
+		&model.StockLevel{},
+		&model.InventoryAdjustment{},
 		// Add more models here as needed
 	}
 
