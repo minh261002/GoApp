@@ -153,6 +153,12 @@ INSERT INTO permissions (name, display_name, description, resource, action, is_s
 ('order.delete', 'Delete Orders', 'Delete order records', 'order', 'delete', TRUE, TRUE),
 ('order.manage', 'Manage Orders', 'Full order management', 'order', 'manage', TRUE, TRUE),
 
+-- Address permissions
+('address.read', 'Read Addresses', 'View address information', 'address', 'read', TRUE, TRUE),
+('address.write', 'Create/Update Addresses', 'Create and update addresses', 'address', 'write', TRUE, TRUE),
+('address.delete', 'Delete Addresses', 'Delete address records', 'address', 'delete', TRUE, TRUE),
+('address.manage', 'Manage Addresses', 'Full address management', 'address', 'manage', TRUE, TRUE),
+
 -- Customer permissions
 ('customer.read', 'Read Customers', 'View customer information', 'customer', 'read', TRUE, TRUE),
 ('customer.write', 'Create/Update Customers', 'Create and update customer information', 'customer', 'write', TRUE, TRUE),

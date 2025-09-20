@@ -28,6 +28,7 @@ const (
 	ResourceTypeInventory ResourceType = "inventory"
 	ResourceTypeUpload    ResourceType = "upload"
 	ResourceTypeOrder     ResourceType = "order"
+	ResourceTypeAddress   ResourceType = "address"
 	ResourceTypeCustomer  ResourceType = "customer"
 	ResourceTypeReport    ResourceType = "report"
 	ResourceTypeSystem    ResourceType = "system"

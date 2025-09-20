@@ -73,6 +73,12 @@ type Order struct {
 	ShippingAddress string `json:"shipping_address" gorm:"type:text;not null"`
 	BillingAddress  string `json:"billing_address" gorm:"type:text"`
 
+	// Address References (optional - for linking to saved addresses)
+	ShippingAddressID  *uint    `json:"shipping_address_id" gorm:"index"`
+	BillingAddressID   *uint    `json:"billing_address_id" gorm:"index"`
+	ShippingAddressRef *Address `json:"shipping_address_ref,omitempty" gorm:"foreignKey:ShippingAddressID"`
+	BillingAddressRef  *Address `json:"billing_address_ref,omitempty" gorm:"foreignKey:BillingAddressID"`
+
 	// Pricing Information
 	SubTotal       float64 `json:"sub_total" gorm:"type:decimal(10,2);not null"`        // Tổng tiền hàng
 	TaxAmount      float64 `json:"tax_amount" gorm:"type:decimal(10,2);default:0"`      // Thuế
@@ -250,6 +256,10 @@ type OrderCreateRequest struct {
 	// Address Information
 	ShippingAddress string `json:"shipping_address" binding:"required,min=10"`
 	BillingAddress  string `json:"billing_address"`
+
+	// Address References (optional - for linking to saved addresses)
+	ShippingAddressID *uint `json:"shipping_address_id"` // ID of saved address
+	BillingAddressID  *uint `json:"billing_address_id"`  // ID of saved address
 
 	// Payment Information
 	PaymentMethod PaymentMethod `json:"payment_method" binding:"required,oneof=cash bank card wallet cod"`

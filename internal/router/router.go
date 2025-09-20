@@ -29,6 +29,7 @@ func SetupRoutes(r *gin.Engine) {
 	inventoryHandler := handler.NewInventoryHandler()
 	permissionHandler := handler.NewPermissionHandler()
 	orderHandler := handler.NewOrderHandler()
+	addressHandler := handler.NewAddressHandler()
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -123,6 +124,18 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			// Public routes (no authentication required)
 			orders.GET("/order-number/:order_number", orderHandler.GetOrderByOrderNumber)
+		}
+
+		// Address routes (public for reading, protected for writing)
+		addresses := v1.Group("/addresses")
+		{
+			// Public routes (no authentication required)
+			addresses.GET("/city/:city", addressHandler.GetAddressesByCity)
+			addresses.GET("/district/:district", addressHandler.GetAddressesByDistrict)
+			addresses.GET("/nearby", addressHandler.GetAddressesNearby)
+			addresses.GET("/search", addressHandler.SearchAddresses)
+			addresses.GET("/stats", addressHandler.GetAddressStats)
+			addresses.GET("/stats/city", addressHandler.GetAddressStatsByCity)
 		}
 
 		// Protected routes
@@ -362,6 +375,27 @@ func SetupRoutes(r *gin.Engine) {
 				orderStats.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetOrderStats)
 				orderStats.GET("/user/:user_id", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetOrderStatsByUser)
 				orderStats.GET("/revenue", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetRevenueStats)
+			}
+
+			// Address management routes (require authentication and permissions)
+			addressManagement := protected.Group("/addresses")
+			{
+				// Address CRUD - requires address permissions
+				addressManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeAddress), addressHandler.CreateAddress)
+				addressManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeAddress), addressHandler.GetAllAddresses)
+				addressManagement.GET("/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeAddress), addressHandler.GetAddressByID)
+				addressManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeAddress), addressHandler.UpdateAddress)
+				addressManagement.DELETE("/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeAddress), addressHandler.DeleteAddress)
+
+				// User addresses - requires read permission
+				addressManagement.GET("/user/:user_id", middleware.ReadPermissionMiddleware(model.ResourceTypeAddress), addressHandler.GetAddressesByUser)
+				addressManagement.GET("/user/:user_id/default", middleware.ReadPermissionMiddleware(model.ResourceTypeAddress), addressHandler.GetDefaultAddressByUser)
+				addressManagement.GET("/user/:user_id/type/:type", middleware.ReadPermissionMiddleware(model.ResourceTypeAddress), addressHandler.GetAddressesByType)
+				addressManagement.GET("/user/:user_id/active", middleware.ReadPermissionMiddleware(model.ResourceTypeAddress), addressHandler.GetActiveAddressesByUser)
+				addressManagement.POST("/user/:user_id/:address_id/set-default", middleware.WritePermissionMiddleware(model.ResourceTypeAddress), addressHandler.SetDefaultAddress)
+
+				// Address statistics - requires read permission
+				addressManagement.GET("/user/:user_id/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeAddress), addressHandler.GetAddressStatsByUser)
 			}
 
 			// Moderator routes (require moderator role and appropriate permissions)

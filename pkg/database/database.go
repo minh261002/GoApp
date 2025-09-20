@@ -139,6 +139,7 @@ func Migrate() error {
 		&model.CartItem{},
 		&model.Payment{},
 		&model.ShippingHistory{},
+		&model.Address{},
 		// Add more models here as needed
 	}
 
