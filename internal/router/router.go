@@ -8,7 +8,9 @@ import (
 	"go_app/pkg/database"
 	"go_app/pkg/middleware"
 	"go_app/pkg/payment"
+	"go_app/pkg/ratelimit"
 	"go_app/pkg/shipping"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -71,6 +73,11 @@ func SetupRoutes(r *gin.Engine) {
 	shippingService := service.NewShippingService(shippingRepo, repository.NewOrderRepository(), ghtkConfig)
 	shippingHandler := handler.NewShippingHandler(shippingService)
 
+	// Initialize rate limit service
+	rateLimitRepo := repository.NewRateLimitRepository(database.GetDB())
+	rateLimitService := service.NewRateLimitService(rateLimitRepo, nil) // TODO: Pass Redis client
+	rateLimitHandler := handler.NewRateLimitHandler(rateLimitService)
+
 	// Initialize order service
 	orderService := service.NewOrderService()
 
@@ -92,25 +99,25 @@ func SetupRoutes(r *gin.Engine) {
 	// API v1 group
 	v1 := r.Group("/api/v1")
 	{
-		// Auth routes (public)
+		// Auth routes (public) - Apply strict rate limiting
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/register", authHandler.Register)
-			auth.POST("/login", authHandler.Login)
-			auth.POST("/forgot-password", authHandler.ForgotPassword)
-			auth.POST("/reset-password", authHandler.ResetPassword)
-			auth.POST("/verify-email", authHandler.VerifyEmail)
+			auth.POST("/register", ratelimit.IPBasedRateLimit(3, time.Minute), authHandler.Register)            // 3 registrations per minute
+			auth.POST("/login", ratelimit.IPBasedRateLimit(5, time.Minute), authHandler.Login)                  // 5 login attempts per minute
+			auth.POST("/forgot-password", ratelimit.IPBasedRateLimit(3, time.Hour), authHandler.ForgotPassword) // 3 password resets per hour
+			auth.POST("/reset-password", ratelimit.IPBasedRateLimit(3, time.Hour), authHandler.ResetPassword)
+			auth.POST("/verify-email", ratelimit.IPBasedRateLimit(5, time.Minute), authHandler.VerifyEmail)
 		}
 
 		// Brand routes (public for reading, protected for writing)
 		brands := v1.Group("/brands")
 		{
 			// Public routes (no authentication required)
-			brands.GET("", brandHandler.GetAllBrands)
-			brands.GET("/active", brandHandler.GetActiveBrands)
-			brands.GET("/search", brandHandler.SearchBrands)
-			brands.GET("/slug/:slug", brandHandler.GetBrandBySlug)
-			brands.GET("/:id", brandHandler.GetBrandByID)
+			brands.GET("", ratelimit.IPBasedRateLimit(100, time.Hour), brandHandler.GetAllBrands)
+			brands.GET("/active", ratelimit.IPBasedRateLimit(100, time.Hour), brandHandler.GetActiveBrands)
+			brands.GET("/search", ratelimit.IPBasedRateLimit(50, time.Hour), brandHandler.SearchBrands)
+			brands.GET("/slug/:slug", ratelimit.IPBasedRateLimit(100, time.Hour), brandHandler.GetBrandBySlug)
+			brands.GET("/:id", ratelimit.IPBasedRateLimit(100, time.Hour), brandHandler.GetBrandByID)
 		}
 
 		// Category routes (public for reading, protected for writing)
@@ -136,15 +143,15 @@ func SetupRoutes(r *gin.Engine) {
 		products := v1.Group("/products")
 		{
 			// Public routes (no authentication required)
-			products.GET("", productHandler.GetAllProducts)
-			products.GET("/featured", productHandler.GetFeaturedProducts)
-			products.GET("/brand/:brand_id", productHandler.GetProductsByBrand)
-			products.GET("/category/:category_id", productHandler.GetProductsByCategory)
-			products.GET("/search", productHandler.SearchProducts)
-			products.GET("/low-stock", productHandler.GetLowStockProducts)
-			products.GET("/stats", productHandler.GetProductStats)
-			products.GET("/slug/:slug", productHandler.GetProductBySlug)
-			products.GET("/sku/:sku", productHandler.GetProductBySKU)
+			products.GET("", ratelimit.IPBasedRateLimit(200, time.Hour), productHandler.GetAllProducts)
+			products.GET("/featured", ratelimit.IPBasedRateLimit(200, time.Hour), productHandler.GetFeaturedProducts)
+			products.GET("/brand/:brand_id", ratelimit.IPBasedRateLimit(200, time.Hour), productHandler.GetProductsByBrand)
+			products.GET("/category/:category_id", ratelimit.IPBasedRateLimit(200, time.Hour), productHandler.GetProductsByCategory)
+			products.GET("/search", ratelimit.IPBasedRateLimit(100, time.Hour), productHandler.SearchProducts)
+			products.GET("/low-stock", ratelimit.IPBasedRateLimit(50, time.Hour), productHandler.GetLowStockProducts)
+			products.GET("/stats", ratelimit.IPBasedRateLimit(50, time.Hour), productHandler.GetProductStats)
+			products.GET("/slug/:slug", ratelimit.IPBasedRateLimit(200, time.Hour), productHandler.GetProductBySlug)
+			products.GET("/sku/:sku", ratelimit.IPBasedRateLimit(200, time.Hour), productHandler.GetProductBySKU)
 			products.GET("/:id", productHandler.GetProductByID)
 		}
 
@@ -938,6 +945,68 @@ func SetupRoutes(r *gin.Engine) {
 			{
 				shippingStats.GET("", shippingHandler.GetShippingStats)
 				shippingStats.GET("/provider/:provider_id", shippingHandler.GetShippingStatsByProvider)
+			}
+		}
+
+		// Rate Limit Management routes (require authentication)
+		rateLimitManagement := protected.Group("/rate-limit")
+		{
+			// Rate limit rules - requires system write permission
+			rateLimitRules := rateLimitManagement.Group("/rules")
+			rateLimitRules.Use(middleware.WritePermissionMiddleware(model.ResourceTypeSystem))
+			{
+				rateLimitRules.POST("", rateLimitHandler.CreateRateLimitRule)
+				rateLimitRules.GET("", rateLimitHandler.GetAllRateLimitRules)
+				rateLimitRules.GET("/active", rateLimitHandler.GetActiveRateLimitRules)
+				rateLimitRules.GET("/:id", rateLimitHandler.GetRateLimitRuleByID)
+				rateLimitRules.PUT("/:id", rateLimitHandler.UpdateRateLimitRule)
+				rateLimitRules.DELETE("/:id", rateLimitHandler.DeleteRateLimitRule)
+			}
+
+			// Rate limit logs - requires system read permission
+			rateLimitLogs := rateLimitManagement.Group("/logs")
+			rateLimitLogs.Use(middleware.ReadPermissionMiddleware(model.ResourceTypeSystem))
+			{
+				rateLimitLogs.GET("", rateLimitHandler.GetRateLimitLogs)
+				rateLimitLogs.GET("/rule/:rule_id", rateLimitHandler.GetRateLimitLogsByRule)
+				rateLimitLogs.GET("/client/:client_ip", rateLimitHandler.GetRateLimitLogsByClient)
+				rateLimitLogs.POST("/cleanup", rateLimitHandler.CleanupOldLogs)
+			}
+
+			// Rate limit stats - requires system read permission
+			rateLimitStats := rateLimitManagement.Group("/stats")
+			rateLimitStats.Use(middleware.ReadPermissionMiddleware(model.ResourceTypeSystem))
+			{
+				rateLimitStats.GET("", rateLimitHandler.GetRateLimitStats)
+				rateLimitStats.POST("/cleanup", rateLimitHandler.CleanupOldStats)
+			}
+
+			// Whitelist management - requires system write permission
+			whitelist := rateLimitManagement.Group("/whitelist")
+			whitelist.Use(middleware.WritePermissionMiddleware(model.ResourceTypeSystem))
+			{
+				whitelist.POST("", rateLimitHandler.CreateWhitelistEntry)
+				whitelist.GET("", rateLimitHandler.GetWhitelistEntries)
+				whitelist.GET("/active", rateLimitHandler.GetActiveWhitelistEntries)
+				whitelist.DELETE("/:id", rateLimitHandler.DeleteWhitelistEntry)
+			}
+
+			// Blacklist management - requires system write permission
+			blacklist := rateLimitManagement.Group("/blacklist")
+			blacklist.Use(middleware.WritePermissionMiddleware(model.ResourceTypeSystem))
+			{
+				blacklist.POST("", rateLimitHandler.CreateBlacklistEntry)
+				blacklist.GET("", rateLimitHandler.GetBlacklistEntries)
+				blacklist.GET("/active", rateLimitHandler.GetActiveBlacklistEntries)
+				blacklist.DELETE("/:id", rateLimitHandler.DeleteBlacklistEntry)
+			}
+
+			// Rate limit info - requires system read permission
+			rateLimitInfo := rateLimitManagement.Group("/info")
+			rateLimitInfo.Use(middleware.ReadPermissionMiddleware(model.ResourceTypeSystem))
+			{
+				rateLimitInfo.GET("", rateLimitHandler.GetRateLimitInfo)
+				rateLimitInfo.POST("/clear", rateLimitHandler.ClearRateLimit)
 			}
 		}
 	}
