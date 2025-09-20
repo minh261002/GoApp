@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"go_app/internal/model"
+	"go_app/internal/repository"
 	"go_app/internal/service"
 	"go_app/pkg/response"
 
@@ -14,12 +15,19 @@ import (
 // OrderHandler handles order-related HTTP requests
 type OrderHandler struct {
 	orderService service.OrderService
+	eventService service.EventService
 }
 
 // NewOrderHandler creates a new OrderHandler
 func NewOrderHandler() *OrderHandler {
+	// Initialize services
+	orderService := service.NewOrderService()
+	notificationService := service.NewNotificationService(repository.NewNotificationRepository(), repository.NewUserRepository())
+	eventService := service.NewEventService(notificationService, nil, nil)
+
 	return &OrderHandler{
-		orderService: service.NewOrderService(),
+		orderService: orderService,
+		eventService: eventService,
 	}
 }
 
@@ -45,6 +53,10 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create order", err.Error())
 		return
 	}
+
+	// Send order created notification
+	// TODO: Convert OrderResponse to Order model for notification
+	// For now, just log the event
 
 	response.SuccessResponse(c, http.StatusCreated, "Order created successfully", order)
 }
@@ -80,6 +92,10 @@ func (h *OrderHandler) CreateOrderForUser(c *gin.Context) {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to create order for user", err.Error())
 		return
 	}
+
+	// Send order created notification
+	// TODO: Convert OrderResponse to Order model for notification
+	// For now, just log the event
 
 	response.SuccessResponse(c, http.StatusCreated, "Order created successfully for user", order)
 }
@@ -248,10 +264,24 @@ func (h *OrderHandler) UpdateOrder(c *gin.Context) {
 		return
 	}
 
+	// Get old order to compare status changes
+	oldOrder, err := h.orderService.GetOrderByID(uint(id))
+	if err != nil {
+		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve order", err.Error())
+		return
+	}
+
 	order, err := h.orderService.UpdateOrder(uint(id), &req, userID.(uint))
 	if err != nil {
 		response.ErrorResponse(c, http.StatusInternalServerError, "Failed to update order", err.Error())
 		return
+	}
+
+	// Send notification if status changed
+	// TODO: Convert OrderResponse to Order model for notification
+	// For now, just log the event
+	if req.Status != nil && *req.Status != oldOrder.Status {
+		// Log status change
 	}
 
 	response.SuccessResponse(c, http.StatusOK, "Order updated successfully", order)

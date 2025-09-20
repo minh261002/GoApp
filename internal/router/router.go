@@ -45,6 +45,11 @@ func SetupRoutes(r *gin.Engine) {
 	userRepo := repository.NewUserRepository()
 	searchService := service.NewSearchService(searchRepo, productRepo, categoryRepo, brandRepo, userRepo)
 	searchHandler := handler.NewSearchHandler(searchService)
+
+	// Initialize notification service
+	notificationRepo := repository.NewNotificationRepository()
+	notificationService := service.NewNotificationService(notificationRepo, userRepo)
+	notificationHandler := handler.NewNotificationHandler(notificationService)
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -703,6 +708,51 @@ func SetupRoutes(r *gin.Engine) {
 				searchProtected.DELETE("/index/delete/:product_id", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), searchHandler.DeleteSearchIndex)
 				searchProtected.POST("/index/rebuild", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), searchHandler.RebuildSearchIndex)
 				searchProtected.DELETE("/logs/delete", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), searchHandler.DeleteSearchLogs)
+			}
+
+			// Notification routes (require authentication)
+			notifications := protected.Group("/notifications")
+			{
+				// Notification CRUD
+				notifications.POST("", notificationHandler.CreateNotification)
+				notifications.GET("", notificationHandler.GetNotificationsByUser)
+				notifications.GET("/:id", notificationHandler.GetNotificationByID)
+				notifications.PUT("/:id", notificationHandler.UpdateNotification)
+				notifications.DELETE("/:id", notificationHandler.DeleteNotification)
+
+				// Notification actions
+				notifications.POST("/:id/read", notificationHandler.MarkAsRead)
+				notifications.POST("/:id/unread", notificationHandler.MarkAsUnread)
+				notifications.POST("/:id/archive", notificationHandler.MarkAsArchived)
+				notifications.POST("/:id/unarchive", notificationHandler.MarkAsUnarchived)
+
+				// Bulk actions
+				notifications.POST("/bulk/read", notificationHandler.BulkMarkAsRead)
+				notifications.POST("/bulk/archive", notificationHandler.BulkMarkAsArchived)
+
+				// Statistics and search
+				notifications.GET("/unread-count", notificationHandler.GetUnreadNotificationCount)
+				notifications.GET("/stats", notificationHandler.GetNotificationStats)
+				notifications.GET("/search", notificationHandler.SearchNotifications)
+			}
+
+			// Notification Templates routes (require authentication)
+			notificationTemplates := protected.Group("/notification-templates")
+			{
+				notificationTemplates.POST("", notificationHandler.CreateNotificationTemplate)
+				notificationTemplates.GET("", notificationHandler.GetNotificationTemplates)
+				notificationTemplates.GET("/:id", notificationHandler.GetNotificationTemplateByID)
+				notificationTemplates.PUT("/:id", notificationHandler.UpdateNotificationTemplate)
+				notificationTemplates.DELETE("/:id", notificationHandler.DeleteNotificationTemplate)
+			}
+
+			// Notification Preferences routes (require authentication)
+			notificationPreferences := protected.Group("/notification-preferences")
+			{
+				notificationPreferences.POST("", notificationHandler.CreateNotificationPreference)
+				notificationPreferences.GET("", notificationHandler.GetNotificationPreferencesByUser)
+				notificationPreferences.PUT("/:id", notificationHandler.UpdateNotificationPreference)
+				notificationPreferences.DELETE("/:id", notificationHandler.DeleteNotificationPreference)
 			}
 
 			// Moderator routes (require moderator role and appropriate permissions)

@@ -201,6 +201,12 @@ INSERT INTO permissions (name, display_name, description, resource, action, is_s
 ('search.delete', 'Delete Search', 'Delete search data and logs', 'search', 'delete', TRUE, TRUE),
 ('search.manage', 'Manage Search', 'Full search management', 'search', 'manage', TRUE, TRUE),
 
+-- Notification permissions
+('notification.read', 'Read Notifications', 'View notification information', 'notification', 'read', TRUE, TRUE),
+('notification.write', 'Create/Update Notifications', 'Create and update notifications', 'notification', 'write', TRUE, TRUE),
+('notification.delete', 'Delete Notifications', 'Delete notification records', 'notification', 'delete', TRUE, TRUE),
+('notification.manage', 'Manage Notifications', 'Full notification management', 'notification', 'manage', TRUE, TRUE),
+
 -- Customer permissions
 ('customer.read', 'Read Customers', 'View customer information', 'customer', 'read', TRUE, TRUE),
 ('customer.write', 'Create/Update Customers', 'Create and update customer information', 'customer', 'write', TRUE, TRUE),
@@ -237,7 +243,7 @@ SELECT r.id, p.id, 1
 FROM roles r, permissions p
 WHERE r.name = 'moderator' 
 AND p.action IN ('read', 'write')
-AND p.resource IN ('user', 'brand', 'category', 'product', 'inventory', 'upload', 'order', 'customer', 'banner', 'slider', 'wishlist', 'search');
+AND p.resource IN ('user', 'brand', 'category', 'product', 'inventory', 'upload', 'order', 'customer', 'banner', 'slider', 'wishlist', 'search', 'notification');
 
 -- User gets read permissions for most resources
 INSERT INTO role_permissions (role_id, permission_id, granted_by)
@@ -245,7 +251,7 @@ SELECT r.id, p.id, 1
 FROM roles r, permissions p
 WHERE r.name = 'user' 
 AND p.action = 'read'
-AND p.resource IN ('brand', 'category', 'product', 'inventory', 'upload', 'banner', 'slider', 'wishlist', 'search');
+AND p.resource IN ('brand', 'category', 'product', 'inventory', 'upload', 'banner', 'slider', 'wishlist', 'search', 'notification');
 
 -- Guest gets read permissions for public content
 INSERT INTO role_permissions (role_id, permission_id, granted_by)
@@ -253,7 +259,7 @@ SELECT r.id, p.id, 1
 FROM roles r, permissions p
 WHERE r.name = 'guest' 
 AND p.action = 'read'
-AND p.resource IN ('brand', 'category', 'product', 'inventory', 'banner', 'slider', 'wishlist', 'search');
+AND p.resource IN ('brand', 'category', 'product', 'inventory', 'banner', 'slider', 'wishlist', 'search', 'notification');
 
 -- +migrate Down
 DROP TABLE IF EXISTS permission_logs;

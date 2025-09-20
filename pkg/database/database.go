@@ -158,6 +158,12 @@ func Migrate() error {
 		&model.SearchLog{},
 		&model.SearchSuggestion{},
 		&model.SearchAnalytics{},
+		&model.Notification{},
+		&model.NotificationTemplate{},
+		&model.NotificationPreference{},
+		&model.NotificationLog{},
+		&model.NotificationQueue{},
+		&model.NotificationStats{},
 		// Add more models here as needed
 	}
 
