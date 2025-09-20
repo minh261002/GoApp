@@ -1,12 +1,14 @@
 package app
 
 import (
-	"log"
 	"math/rand"
 	"time"
 
 	"go_app/configs"
+	"go_app/internal/repository"
 	"go_app/internal/router"
+	"go_app/internal/service"
+	"go_app/internal/worker"
 	"go_app/pkg/database"
 	"go_app/pkg/logger"
 	"go_app/pkg/redis"
@@ -18,6 +20,7 @@ import (
 type App struct {
 	Config *configs.Config
 	Router *gin.Engine
+	Port   string
 }
 
 // New creates a new App instance
@@ -50,21 +53,36 @@ func New() *App {
 	// Setup routes
 	router.SetupRoutes(r)
 
+	// Start notification worker
+	notificationService := service.NewNotificationService(
+		repository.NewNotificationRepository(),
+		repository.NewUserRepository(),
+	)
+	notificationWorker := worker.NewNotificationWorker(notificationService)
+	go notificationWorker.Start()
+
 	return &App{
 		Config: config,
 		Router: r,
+		Port:   config.Server.Port,
 	}
 }
 
+// SetPort sets the server port
+func (a *App) SetPort(port string) {
+	a.Port = port
+}
+
 // Run starts the application server
-func (a *App) Run() {
-	port := a.Config.Server.Port
+func (a *App) Run() error {
+	port := a.Port
+	if port == "" {
+		port = a.Config.Server.Port
+	}
 	if port == "" {
 		port = "8080"
 	}
 
 	logger.Infof("Starting server on port %s", port)
-	if err := a.Router.Run(":" + port); err != nil {
-		log.Fatal("Failed to start server:", err)
-	}
+	return a.Router.Run(":" + port)
 }
