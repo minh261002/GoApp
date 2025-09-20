@@ -32,6 +32,8 @@ func SetupRoutes(r *gin.Engine) {
 	addressHandler := handler.NewAddressHandler()
 	reviewHandler := handler.NewReviewHandler()
 	couponHandler := handler.NewCouponHandler()
+	bannerHandler := handler.NewBannerHandler()
+	sliderHandler := handler.NewSliderHandler()
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -177,6 +179,33 @@ func SetupRoutes(r *gin.Engine) {
 			points.GET("/user/:user_id/stats", couponHandler.GetUserPointStats)
 			points.GET("/stats", couponHandler.GetPointStats)
 			points.GET("/top-earners", couponHandler.GetTopEarners)
+		}
+
+		// Banner public routes (no authentication required)
+		banners := v1.Group("/banners")
+		{
+			// Public banner routes
+			banners.GET("/active", bannerHandler.GetActiveBanners)
+			banners.GET("/type/:type", bannerHandler.GetBannersByType)
+			banners.GET("/position/:position", bannerHandler.GetBannersByPosition)
+			banners.GET("/audience/:audience", bannerHandler.GetBannersByTargetAudience)
+			banners.GET("/device/:device_type", bannerHandler.GetBannersByDeviceType)
+			banners.GET("/search", bannerHandler.SearchBanners)
+			banners.POST("/click", bannerHandler.TrackBannerClick)
+			banners.POST("/view", bannerHandler.TrackBannerView)
+		}
+
+		// Slider public routes (no authentication required)
+		sliders := v1.Group("/sliders")
+		{
+			// Public slider routes
+			sliders.GET("/active", sliderHandler.GetActiveSliders)
+			sliders.GET("/type/:type", sliderHandler.GetSlidersByType)
+			sliders.GET("/audience/:audience", sliderHandler.GetSlidersByTargetAudience)
+			sliders.GET("/device/:device_type", sliderHandler.GetSlidersByDeviceType)
+			sliders.GET("/search", sliderHandler.SearchSliders)
+			sliders.POST("/view", sliderHandler.TrackSliderView)
+			sliders.POST("/item/click", sliderHandler.TrackSliderItemClick)
 		}
 
 		// Protected routes
@@ -516,6 +545,65 @@ func SetupRoutes(r *gin.Engine) {
 
 				// Point queries - requires read permission
 				pointManagement.GET("/transaction/:id", middleware.ReadPermissionMiddleware(model.ResourceTypePoint), couponHandler.GetPointTransactionByID)
+			}
+
+			// Banner management routes (require authentication and permissions)
+			bannerManagement := protected.Group("/banners")
+			{
+				// Banner CRUD - requires banner permissions
+				bannerManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeBanner), bannerHandler.CreateBanner)
+				bannerManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetAllBanners)
+				bannerManagement.GET("/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetBannerByID)
+				bannerManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeBanner), bannerHandler.UpdateBanner)
+				bannerManagement.DELETE("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeBanner), bannerHandler.DeleteBanner)
+
+				// Banner management - requires banner permissions
+				bannerManagement.GET("/type/:type", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetBannersByType)
+				bannerManagement.GET("/position/:position", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetBannersByPosition)
+				bannerManagement.GET("/status/:status", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetBannersByStatus)
+				bannerManagement.GET("/audience/:audience", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetBannersByTargetAudience)
+				bannerManagement.GET("/device/:device_type", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetBannersByDeviceType)
+				bannerManagement.GET("/search", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.SearchBanners)
+
+				// Banner analytics - requires read permission
+				bannerManagement.GET("/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetBannerStats)
+				bannerManagement.GET("/:id/analytics", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetBannerAnalytics)
+				bannerManagement.GET("/expired", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetExpiredBanners)
+				bannerManagement.GET("/to-activate", middleware.ReadPermissionMiddleware(model.ResourceTypeBanner), bannerHandler.GetBannersToActivate)
+				bannerManagement.PUT("/:id/status", middleware.WritePermissionMiddleware(model.ResourceTypeBanner), bannerHandler.UpdateBannerStatus)
+			}
+
+			// Slider management routes (require authentication and permissions)
+			sliderManagement := protected.Group("/sliders")
+			{
+				// Slider CRUD - requires slider permissions
+				sliderManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.CreateSlider)
+				sliderManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetAllSliders)
+				sliderManagement.GET("/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetSliderByID)
+				sliderManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.UpdateSlider)
+				sliderManagement.DELETE("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.DeleteSlider)
+
+				// Slider management - requires slider permissions
+				sliderManagement.GET("/type/:type", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetSlidersByType)
+				sliderManagement.GET("/status/:status", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetSlidersByStatus)
+				sliderManagement.GET("/audience/:audience", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetSlidersByTargetAudience)
+				sliderManagement.GET("/device/:device_type", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetSlidersByDeviceType)
+				sliderManagement.GET("/search", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.SearchSliders)
+
+				// Slider analytics - requires read permission
+				sliderManagement.GET("/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetSliderStats)
+				sliderManagement.GET("/:id/analytics", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetSliderAnalytics)
+				sliderManagement.GET("/expired", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetExpiredSliders)
+				sliderManagement.GET("/to-activate", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetSlidersToActivate)
+				sliderManagement.PUT("/:id/status", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.UpdateSliderStatus)
+
+				// Slider items - requires slider permissions
+				sliderManagement.POST("/:slider_id/items", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.CreateSliderItem)
+				sliderManagement.GET("/:slider_id/items", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetSliderItemsBySlider)
+				sliderManagement.GET("/items/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeSlider), sliderHandler.GetSliderItemByID)
+				sliderManagement.PUT("/items/:id", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.UpdateSliderItem)
+				sliderManagement.DELETE("/items/:id", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.DeleteSliderItem)
+				sliderManagement.PUT("/:slider_id/reorder", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.ReorderSliderItems)
 			}
 
 			// Moderator routes (require moderator role and appropriate permissions)

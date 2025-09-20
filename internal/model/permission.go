@@ -32,6 +32,8 @@ const (
 	ResourceTypeReview    ResourceType = "review"
 	ResourceTypeCoupon    ResourceType = "coupon"
 	ResourceTypePoint     ResourceType = "point"
+	ResourceTypeBanner    ResourceType = "banner"
+	ResourceTypeSlider    ResourceType = "slider"
 	ResourceTypeCustomer  ResourceType = "customer"
 	ResourceTypeReport    ResourceType = "report"
 	ResourceTypeSystem    ResourceType = "system"

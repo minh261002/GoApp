@@ -147,6 +147,9 @@ func Migrate() error {
 		&model.CouponUsage{},
 		&model.Point{},
 		&model.PointTransaction{},
+		&model.Banner{},
+		&model.Slider{},
+		&model.SliderItem{},
 		// Add more models here as needed
 	}
 

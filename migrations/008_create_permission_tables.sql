@@ -177,6 +177,18 @@ INSERT INTO permissions (name, display_name, description, resource, action, is_s
 ('point.delete', 'Delete Points', 'Delete point records', 'point', 'delete', TRUE, TRUE),
 ('point.manage', 'Manage Points', 'Full point management', 'point', 'manage', TRUE, TRUE),
 
+-- Banner permissions
+('banner.read', 'Read Banners', 'View banner information', 'banner', 'read', TRUE, TRUE),
+('banner.write', 'Create/Update Banners', 'Create and update banners', 'banner', 'write', TRUE, TRUE),
+('banner.delete', 'Delete Banners', 'Delete banner records', 'banner', 'delete', TRUE, TRUE),
+('banner.manage', 'Manage Banners', 'Full banner management', 'banner', 'manage', TRUE, TRUE),
+
+-- Slider permissions
+('slider.read', 'Read Sliders', 'View slider information', 'slider', 'read', TRUE, TRUE),
+('slider.write', 'Create/Update Sliders', 'Create and update sliders', 'slider', 'write', TRUE, TRUE),
+('slider.delete', 'Delete Sliders', 'Delete slider records', 'slider', 'delete', TRUE, TRUE),
+('slider.manage', 'Manage Sliders', 'Full slider management', 'slider', 'manage', TRUE, TRUE),
+
 -- Customer permissions
 ('customer.read', 'Read Customers', 'View customer information', 'customer', 'read', TRUE, TRUE),
 ('customer.write', 'Create/Update Customers', 'Create and update customer information', 'customer', 'write', TRUE, TRUE),
@@ -213,7 +225,7 @@ SELECT r.id, p.id, 1
 FROM roles r, permissions p
 WHERE r.name = 'moderator' 
 AND p.action IN ('read', 'write')
-AND p.resource IN ('user', 'brand', 'category', 'product', 'inventory', 'upload', 'order', 'customer');
+AND p.resource IN ('user', 'brand', 'category', 'product', 'inventory', 'upload', 'order', 'customer', 'banner', 'slider');
 
 -- User gets read permissions for most resources
 INSERT INTO role_permissions (role_id, permission_id, granted_by)
@@ -221,7 +233,7 @@ SELECT r.id, p.id, 1
 FROM roles r, permissions p
 WHERE r.name = 'user' 
 AND p.action = 'read'
-AND p.resource IN ('brand', 'category', 'product', 'inventory', 'upload');
+AND p.resource IN ('brand', 'category', 'product', 'inventory', 'upload', 'banner', 'slider');
 
 -- Guest gets read permissions for public content
 INSERT INTO role_permissions (role_id, permission_id, granted_by)
@@ -229,7 +241,7 @@ SELECT r.id, p.id, 1
 FROM roles r, permissions p
 WHERE r.name = 'guest' 
 AND p.action = 'read'
-AND p.resource IN ('brand', 'category', 'product', 'inventory');
+AND p.resource IN ('brand', 'category', 'product', 'inventory', 'banner', 'slider');
 
 -- +migrate Down
 DROP TABLE IF EXISTS permission_logs;
