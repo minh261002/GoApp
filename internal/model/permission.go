@@ -29,6 +29,7 @@ const (
 	ResourceTypeUpload    ResourceType = "upload"
 	ResourceTypeOrder     ResourceType = "order"
 	ResourceTypeAddress   ResourceType = "address"
+	ResourceTypeReview    ResourceType = "review"
 	ResourceTypeCustomer  ResourceType = "customer"
 	ResourceTypeReport    ResourceType = "report"
 	ResourceTypeSystem    ResourceType = "system"

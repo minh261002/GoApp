@@ -30,6 +30,7 @@ func SetupRoutes(r *gin.Engine) {
 	permissionHandler := handler.NewPermissionHandler()
 	orderHandler := handler.NewOrderHandler()
 	addressHandler := handler.NewAddressHandler()
+	reviewHandler := handler.NewReviewHandler()
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -136,6 +137,20 @@ func SetupRoutes(r *gin.Engine) {
 			addresses.GET("/search", addressHandler.SearchAddresses)
 			addresses.GET("/stats", addressHandler.GetAddressStats)
 			addresses.GET("/stats/city", addressHandler.GetAddressStatsByCity)
+		}
+
+		// Review routes (public for reading, protected for writing)
+		reviews := v1.Group("/reviews")
+		{
+			// Public routes (no authentication required)
+			reviews.GET("/product/:product_id", reviewHandler.GetReviewsByProduct)
+			reviews.GET("/product/:product_id/verified", reviewHandler.GetVerifiedReviews)
+			reviews.GET("/product/:product_id/rating", reviewHandler.GetAverageRating)
+			reviews.GET("/product/:product_id/distribution", reviewHandler.GetRatingDistribution)
+			reviews.GET("/product/:product_id/stats", reviewHandler.GetProductReviewStats)
+			reviews.GET("/recent", reviewHandler.GetRecentReviews)
+			reviews.GET("/search", reviewHandler.SearchReviews)
+			reviews.GET("/stats", reviewHandler.GetReviewStats)
 		}
 
 		// Protected routes
@@ -396,6 +411,45 @@ func SetupRoutes(r *gin.Engine) {
 
 				// Address statistics - requires read permission
 				addressManagement.GET("/user/:user_id/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeAddress), addressHandler.GetAddressStatsByUser)
+			}
+
+			// Review management routes (require authentication and permissions)
+			reviewManagement := protected.Group("/reviews")
+			{
+				// Review CRUD - requires review permissions
+				reviewManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeReview), reviewHandler.CreateReview)
+				reviewManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetAllReviews)
+				reviewManagement.GET("/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetReviewByID)
+				reviewManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeReview), reviewHandler.UpdateReview)
+				reviewManagement.DELETE("/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeReview), reviewHandler.DeleteReview)
+
+				// User reviews - requires read permission
+				reviewManagement.GET("/user/:user_id", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetReviewsByUser)
+				reviewManagement.GET("/user/:user_id/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetUserReviewStats)
+
+				// Review management - requires read permission
+				reviewManagement.GET("/status/:status", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetReviewsByStatus)
+				reviewManagement.GET("/type/:type", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetReviewsByType)
+
+				// Helpful votes - requires write permission
+				reviewManagement.POST("/:review_id/vote", middleware.WritePermissionMiddleware(model.ResourceTypeReview), reviewHandler.CreateHelpfulVote)
+				reviewManagement.PUT("/:review_id/vote", middleware.WritePermissionMiddleware(model.ResourceTypeReview), reviewHandler.UpdateHelpfulVote)
+				reviewManagement.DELETE("/:review_id/vote", middleware.WritePermissionMiddleware(model.ResourceTypeReview), reviewHandler.DeleteHelpfulVote)
+				reviewManagement.GET("/:review_id/votes", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetHelpfulVotesByReview)
+
+				// Review images - requires read permission
+				reviewManagement.GET("/:review_id/images", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetReviewImagesByReview)
+				reviewManagement.DELETE("/images/:image_id", middleware.DeletePermissionMiddleware(model.ResourceTypeReview), reviewHandler.DeleteReviewImage)
+			}
+
+			// Review moderation routes (require moderator role and review permissions)
+			reviewModeration := protected.Group("/moderator/reviews")
+			reviewModeration.Use(authMiddleware.ModeratorMiddleware())
+			{
+				// Review moderation - requires review manage permission
+				reviewModeration.POST("/:review_id/moderate", middleware.ManagePermissionMiddleware(model.ResourceTypeReview), reviewHandler.ModerateReview)
+				reviewModeration.GET("/pending", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetPendingReviews)
+				reviewModeration.GET("/moderated/:moderator_id", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetModeratedReviews)
 			}
 
 			// Moderator routes (require moderator role and appropriate permissions)

@@ -159,6 +159,12 @@ INSERT INTO permissions (name, display_name, description, resource, action, is_s
 ('address.delete', 'Delete Addresses', 'Delete address records', 'address', 'delete', TRUE, TRUE),
 ('address.manage', 'Manage Addresses', 'Full address management', 'address', 'manage', TRUE, TRUE),
 
+-- Review permissions
+('review.read', 'Read Reviews', 'View review information', 'review', 'read', TRUE, TRUE),
+('review.write', 'Create/Update Reviews', 'Create and update reviews', 'review', 'write', TRUE, TRUE),
+('review.delete', 'Delete Reviews', 'Delete review records', 'review', 'delete', TRUE, TRUE),
+('review.manage', 'Manage Reviews', 'Full review management and moderation', 'review', 'manage', TRUE, TRUE),
+
 -- Customer permissions
 ('customer.read', 'Read Customers', 'View customer information', 'customer', 'read', TRUE, TRUE),
 ('customer.write', 'Create/Update Customers', 'Create and update customer information', 'customer', 'write', TRUE, TRUE),

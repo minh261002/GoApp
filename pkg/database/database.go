@@ -140,6 +140,9 @@ func Migrate() error {
 		&model.Payment{},
 		&model.ShippingHistory{},
 		&model.Address{},
+		&model.Review{},
+		&model.ReviewImage{},
+		&model.ReviewHelpfulVote{},
 		// Add more models here as needed
 	}
 
