@@ -69,6 +69,10 @@ dev-port:
 worker:
 	$(GOCMD) run ./cmd/worker/main.go
 
+# Run the email worker
+email-worker:
+	$(GOCMD) run ./cmd/email-worker/main.go
+
 # Run worker with custom interval
 worker-interval:
 	$(GOCMD) run ./cmd/worker/main.go -interval 10s

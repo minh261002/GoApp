@@ -5,6 +5,7 @@ import (
 	"go_app/internal/model"
 	"go_app/internal/repository"
 	"go_app/internal/service"
+	"go_app/pkg/database"
 	"go_app/pkg/middleware"
 	"go_app/pkg/payment"
 
@@ -51,6 +52,11 @@ func SetupRoutes(r *gin.Engine) {
 	notificationRepo := repository.NewNotificationRepository()
 	notificationService := service.NewNotificationService(notificationRepo, userRepo)
 	notificationHandler := handler.NewNotificationHandler(notificationService)
+
+	// Initialize email service
+	emailRepo := repository.NewEmailRepository(database.GetDB())
+	emailService := service.NewEmailService(emailRepo)
+	emailHandler := handler.NewEmailHandler(emailService)
 
 	// Initialize order service
 	orderService := service.NewOrderService()
@@ -820,6 +826,54 @@ func SetupRoutes(r *gin.Engine) {
 			// Public payment routes
 			payments.GET("/methods", paymentHandler.GetPaymentMethods)
 			payments.POST("/webhook/:payment_method", paymentHandler.HandleWebhook)
+		}
+
+		// Email management routes (require authentication)
+		emailManagement := protected.Group("/email")
+		{
+			// Email templates - requires system write permission
+			emailTemplates := emailManagement.Group("/templates")
+			emailTemplates.Use(middleware.WritePermissionMiddleware(model.ResourceTypeSystem))
+			{
+				emailTemplates.POST("", emailHandler.CreateEmailTemplate)
+				emailTemplates.GET("", emailHandler.GetAllEmailTemplates)
+				emailTemplates.GET("/type/:type", emailHandler.GetEmailTemplatesByType)
+				emailTemplates.GET("/:id", emailHandler.GetEmailTemplateByID)
+				emailTemplates.PUT("/:id", emailHandler.UpdateEmailTemplate)
+				emailTemplates.DELETE("/:id", emailHandler.DeleteEmailTemplate)
+			}
+
+			// Email sending - requires system write permission
+			emailSending := emailManagement.Group("/send")
+			emailSending.Use(middleware.WritePermissionMiddleware(model.ResourceTypeSystem))
+			{
+				emailSending.POST("", emailHandler.SendEmail)
+				emailSending.POST("/template/:template_name", emailHandler.SendEmailWithTemplate)
+				emailSending.POST("/process-queue", emailHandler.ProcessEmailQueue)
+				emailSending.POST("/retry-failed", emailHandler.RetryFailedEmails)
+				emailSending.POST("/test-retry", emailHandler.TestEmailRetry)
+			}
+
+			// Email monitoring - requires system read permission
+			emailMonitoring := emailManagement.Group("/monitor")
+			emailMonitoring.Use(middleware.ReadPermissionMiddleware(model.ResourceTypeSystem))
+			{
+				emailMonitoring.GET("/queue-stats", emailHandler.GetEmailQueueStats)
+				emailMonitoring.GET("/logs", emailHandler.GetEmailLogs)
+				emailMonitoring.GET("/stats", emailHandler.GetEmailStats)
+			}
+
+			// Email config - requires system write permission
+			emailConfigs := emailManagement.Group("/configs")
+			emailConfigs.Use(middleware.WritePermissionMiddleware(model.ResourceTypeSystem))
+			{
+				emailConfigs.POST("", emailHandler.CreateEmailConfig)
+				emailConfigs.GET("", emailHandler.GetAllEmailConfigs)
+				emailConfigs.GET("/active", emailHandler.GetActiveEmailConfig)
+				emailConfigs.GET("/:id", emailHandler.GetEmailConfigByID)
+				emailConfigs.PUT("/:id", emailHandler.UpdateEmailConfig)
+				emailConfigs.DELETE("/:id", emailHandler.DeleteEmailConfig)
+			}
 		}
 	}
 }
