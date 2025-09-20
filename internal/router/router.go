@@ -6,6 +6,7 @@ import (
 	"go_app/internal/repository"
 	"go_app/internal/service"
 	"go_app/pkg/middleware"
+	"go_app/pkg/payment"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,6 +51,20 @@ func SetupRoutes(r *gin.Engine) {
 	notificationRepo := repository.NewNotificationRepository()
 	notificationService := service.NewNotificationService(notificationRepo, userRepo)
 	notificationHandler := handler.NewNotificationHandler(notificationService)
+
+	// Initialize order service
+	orderService := service.NewOrderService()
+
+	// Initialize payment gateway service
+	payOSConfig := payment.PayOSConfig{
+		ClientID:    "YOUR_PAYOS_CLIENT_ID",    // TODO: Get from config
+		APIKey:      "YOUR_PAYOS_API_KEY",      // TODO: Get from config
+		ChecksumKey: "YOUR_PAYOS_CHECKSUM_KEY", // TODO: Get from config
+		BaseURL:     "https://api-merchant.payos.vn",
+	}
+	paymentGatewayService := service.NewPaymentGatewayService(payOSConfig)
+	paymentHandler := handler.NewPaymentHandler(orderService, paymentGatewayService)
+
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -438,6 +453,9 @@ func SetupRoutes(r *gin.Engine) {
 
 				// User orders - requires read permission
 				orderManagement.GET("/user/:user_id", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetOrdersByUser)
+
+				// Payment routes for orders
+				orderManagement.POST("/:id/payment/link", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), paymentHandler.CreatePaymentLink)
 			}
 
 			// Admin order management routes (require admin role and order permissions)
@@ -474,6 +492,14 @@ func SetupRoutes(r *gin.Engine) {
 				orderStats.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetOrderStats)
 				orderStats.GET("/user/:user_id", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetOrderStatsByUser)
 				orderStats.GET("/revenue", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetRevenueStats)
+			}
+
+			// Payment management routes (require authentication and permissions)
+			paymentManagement := protected.Group("/payments")
+			{
+				// Payment processing - requires order write permission
+				paymentManagement.GET("/process/:order_code", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), paymentHandler.ProcessPayment)
+				paymentManagement.POST("/cancel/:order_code", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), paymentHandler.CancelPayment)
 			}
 
 			// Address management routes (require authentication and permissions)
@@ -773,6 +799,14 @@ func SetupRoutes(r *gin.Engine) {
 					c.JSON(200, gin.H{"message": "Content moderation"})
 				})
 			}
+		}
+
+		// Payment public routes (no authentication required)
+		payments := v1.Group("/payments")
+		{
+			// Public payment routes
+			payments.GET("/methods", paymentHandler.GetPaymentMethods)
+			payments.POST("/webhook/:payment_method", paymentHandler.HandleWebhook)
 		}
 	}
 }

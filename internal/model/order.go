@@ -35,11 +35,8 @@ const (
 type PaymentMethod string
 
 const (
-	PaymentMethodCash   PaymentMethod = "cash"   // Thanh toán khi nhận hàng
-	PaymentMethodBank   PaymentMethod = "bank"   // Chuyển khoản ngân hàng
-	PaymentMethodCard   PaymentMethod = "card"   // Thẻ tín dụng/ghi nợ
-	PaymentMethodWallet PaymentMethod = "wallet" // Ví điện tử
 	PaymentMethodCOD    PaymentMethod = "cod"    // Cash on Delivery
+	PaymentMethodVietQR PaymentMethod = "vietqr" // VietQR (PayOS)
 )
 
 // ShippingStatus defines the shipping status
@@ -239,6 +236,56 @@ type ShippingHistory struct {
 	UpdatedByUser *User `json:"updated_by_user,omitempty" gorm:"foreignKey:UpdatedBy"`
 
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
+}
+
+// Payment Link Response
+type PaymentLinkResponse struct {
+	PaymentURL    string        `json:"payment_url"`
+	QRCode        string        `json:"qr_code,omitempty"`
+	OrderCode     int           `json:"order_code,omitempty"`
+	Amount        float64       `json:"amount"`
+	AccountNumber string        `json:"account_number,omitempty"`
+	AccountName   string        `json:"account_name,omitempty"`
+	ExpiresAt     time.Time     `json:"expires_at"`
+	PaymentMethod PaymentMethod `json:"payment_method"`
+}
+
+// Payment Info Response
+type PaymentInfoResponse struct {
+	OrderCode     int           `json:"order_code"`
+	Amount        float64       `json:"amount"`
+	Status        PaymentStatus `json:"status"`
+	TransactionID string        `json:"transaction_id"`
+	Reference     string        `json:"reference"`
+	AccountNumber string        `json:"account_number,omitempty"`
+	Description   string        `json:"description"`
+	PaymentMethod PaymentMethod `json:"payment_method"`
+}
+
+// Payment Webhook Response
+type PaymentWebhookResponse struct {
+	OrderCode     int           `json:"order_code"`
+	Amount        float64       `json:"amount"`
+	Status        PaymentStatus `json:"status"`
+	TransactionID string        `json:"transaction_id"`
+	Reference     string        `json:"reference"`
+	PaymentMethod PaymentMethod `json:"payment_method"`
+	RawData       []byte        `json:"raw_data,omitempty"`
+}
+
+// Payment Method Info
+type PaymentMethodInfo struct {
+	Code        string  `json:"code"`
+	Name        string  `json:"name"`
+	DisplayName string  `json:"display_name"`
+	Description string  `json:"description"`
+	IsActive    bool    `json:"is_active"`
+	IsOnline    bool    `json:"is_online"`
+	FeeType     string  `json:"fee_type"` // fixed, percentage, none
+	FeeValue    float64 `json:"fee_value"`
+	MinAmount   float64 `json:"min_amount"`
+	MaxAmount   float64 `json:"max_amount"`
+	Currency    string  `json:"currency"`
 }
 
 // Request/Response structs
