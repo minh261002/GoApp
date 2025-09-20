@@ -8,6 +8,7 @@ import (
 	"go_app/pkg/database"
 	"go_app/pkg/middleware"
 	"go_app/pkg/payment"
+	"go_app/pkg/shipping"
 
 	"github.com/gin-gonic/gin"
 )
@@ -57,6 +58,18 @@ func SetupRoutes(r *gin.Engine) {
 	emailRepo := repository.NewEmailRepository(database.GetDB())
 	emailService := service.NewEmailService(emailRepo)
 	emailHandler := handler.NewEmailHandler(emailService)
+
+	// Initialize shipping service
+	shippingRepo := repository.NewShippingRepository(database.GetDB())
+	ghtkConfig := shipping.GHTKConfig{
+		BaseURL:    "https://services.ghtk.vn",
+		Token:      "YOUR_GHTK_TOKEN", // TODO: Get from config
+		ShopID:     "YOUR_SHOP_ID",    // TODO: Get from config
+		Timeout:    30,
+		IsTestMode: false,
+	}
+	shippingService := service.NewShippingService(shippingRepo, repository.NewOrderRepository(), ghtkConfig)
+	shippingHandler := handler.NewShippingHandler(shippingService)
 
 	// Initialize order service
 	orderService := service.NewOrderService()
@@ -828,6 +841,17 @@ func SetupRoutes(r *gin.Engine) {
 			payments.POST("/webhook/:payment_method", paymentHandler.HandleWebhook)
 		}
 
+		// Shipping public routes (no authentication required)
+		shipping := v1.Group("/shipping")
+		{
+			// Public shipping routes
+			shipping.POST("/calculate", shippingHandler.CalculateShipping)
+			shipping.POST("/calculate/ghtk", shippingHandler.CalculateShippingWithGHTK)
+			shipping.GET("/providers/active", shippingHandler.GetActiveShippingProviders)
+			shipping.GET("/orders/tracking/:tracking_code", shippingHandler.GetShippingOrderByTrackingCode)
+			shipping.POST("/webhook/:provider", shippingHandler.HandleShippingWebhook)
+		}
+
 		// Email management routes (require authentication)
 		emailManagement := protected.Group("/email")
 		{
@@ -873,6 +897,47 @@ func SetupRoutes(r *gin.Engine) {
 				emailConfigs.GET("/:id", emailHandler.GetEmailConfigByID)
 				emailConfigs.PUT("/:id", emailHandler.UpdateEmailConfig)
 				emailConfigs.DELETE("/:id", emailHandler.DeleteEmailConfig)
+			}
+		}
+
+		// Shipping management routes (require authentication)
+		shippingManagement := protected.Group("/shipping")
+		{
+			// Shipping providers - requires system write permission
+			shippingProviders := shippingManagement.Group("/providers")
+			shippingProviders.Use(middleware.WritePermissionMiddleware(model.ResourceTypeSystem))
+			{
+				shippingProviders.POST("", shippingHandler.CreateShippingProvider)
+				shippingProviders.GET("", shippingHandler.GetAllShippingProviders)
+				shippingProviders.GET("/:id", shippingHandler.GetShippingProviderByID)
+				shippingProviders.PUT("/:id", shippingHandler.UpdateShippingProvider)
+				shippingProviders.DELETE("/:id", shippingHandler.DeleteShippingProvider)
+			}
+
+			// Shipping orders - requires order write permission
+			shippingOrders := shippingManagement.Group("/orders")
+			shippingOrders.Use(middleware.WritePermissionMiddleware(model.ResourceTypeOrder))
+			{
+				shippingOrders.POST("", shippingHandler.CreateShippingOrder)
+				shippingOrders.GET("", shippingHandler.GetShippingOrders)
+				shippingOrders.GET("/:id", shippingHandler.GetShippingOrderByID)
+				shippingOrders.GET("/order/:order_id", shippingHandler.GetShippingOrderByOrderID)
+				shippingOrders.POST("/:id/cancel", shippingHandler.CancelShippingOrder)
+			}
+
+			// Shipping tracking - requires order read permission
+			shippingTracking := shippingManagement.Group("/tracking")
+			shippingTracking.Use(middleware.ReadPermissionMiddleware(model.ResourceTypeOrder))
+			{
+				shippingTracking.GET("/:order_id", shippingHandler.GetShippingTracking)
+			}
+
+			// Shipping statistics - requires system read permission
+			shippingStats := shippingManagement.Group("/stats")
+			shippingStats.Use(middleware.ReadPermissionMiddleware(model.ResourceTypeSystem))
+			{
+				shippingStats.GET("", shippingHandler.GetShippingStats)
+				shippingStats.GET("/provider/:provider_id", shippingHandler.GetShippingStatsByProvider)
 			}
 		}
 	}
