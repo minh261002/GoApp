@@ -22,6 +22,7 @@ func SetupRoutes(r *gin.Engine) {
 	// Initialize handlers
 	authHandler := handler.NewAuthHandler()
 	brandHandler := handler.NewBrandHandler()
+	categoryHandler := handler.NewCategoryHandler()
 	uploadHandler := handler.NewUploadHandler()
 	authMiddleware := middleware.NewAuthMiddleware()
 
@@ -47,6 +48,25 @@ func SetupRoutes(r *gin.Engine) {
 			brands.GET("/search", brandHandler.SearchBrands)
 			brands.GET("/slug/:slug", brandHandler.GetBrandBySlug)
 			brands.GET("/:id", brandHandler.GetBrandByID)
+		}
+
+		// Category routes (public for reading, protected for writing)
+		categories := v1.Group("/categories")
+		{
+			// Public routes (no authentication required)
+			categories.GET("", categoryHandler.GetAllCategories)
+			categories.GET("/tree", categoryHandler.GetCategoryTree)
+			categories.GET("/level/:level", categoryHandler.GetCategoriesByLevel)
+			categories.GET("/parent", categoryHandler.GetCategoriesByParent)
+			categories.GET("/root", categoryHandler.GetRootCategories)
+			categories.GET("/leaf", categoryHandler.GetLeafCategories)
+			categories.GET("/search", categoryHandler.SearchCategories)
+			categories.GET("/slug/:slug", categoryHandler.GetCategoryBySlug)
+			categories.GET("/:id", categoryHandler.GetCategoryByID)
+			categories.GET("/:id/children", categoryHandler.GetCategoryWithChildren)
+			categories.GET("/:id/breadcrumbs", categoryHandler.GetCategoryBreadcrumbs)
+			categories.GET("/:id/descendants", categoryHandler.GetCategoryDescendants)
+			categories.GET("/:id/ancestors", categoryHandler.GetCategoryAncestors)
 		}
 
 		// Upload routes (public for reading, protected for writing)
@@ -76,6 +96,16 @@ func SetupRoutes(r *gin.Engine) {
 				brandManagement.DELETE("/:id", brandHandler.DeleteBrand)
 				brandManagement.PATCH("/:id/status", brandHandler.UpdateBrandStatus)
 				brandManagement.PATCH("/bulk-status", brandHandler.BulkUpdateBrandStatus)
+			}
+
+			// Category management routes (require authentication)
+			categoryManagement := protected.Group("/categories")
+			{
+				categoryManagement.POST("", categoryHandler.CreateCategory)
+				categoryManagement.PUT("/:id", categoryHandler.UpdateCategory)
+				categoryManagement.DELETE("/:id", categoryHandler.DeleteCategory)
+				categoryManagement.PATCH("/:id/status", categoryHandler.UpdateCategoryStatus)
+				categoryManagement.PATCH("/bulk-status", categoryHandler.BulkUpdateCategoryStatus)
 			}
 
 			// Upload management routes (require authentication)
