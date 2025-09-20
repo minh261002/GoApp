@@ -128,6 +128,11 @@ func Migrate() error {
 		&model.InventoryMovement{},
 		&model.StockLevel{},
 		&model.InventoryAdjustment{},
+		&model.Permission{},
+		&model.Role{},
+		&model.RolePermission{},
+		&model.UserPermission{},
+		&model.PermissionLog{},
 		// Add more models here as needed
 	}
 
