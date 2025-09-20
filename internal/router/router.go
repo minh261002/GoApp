@@ -28,6 +28,7 @@ func SetupRoutes(r *gin.Engine) {
 	uploadHandler := handler.NewUploadHandler()
 	inventoryHandler := handler.NewInventoryHandler()
 	permissionHandler := handler.NewPermissionHandler()
+	orderHandler := handler.NewOrderHandler()
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -115,6 +116,13 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			// Public routes (no authentication required)
 			permissions.POST("/check", permissionHandler.CheckPermission)
+		}
+
+		// Order routes (public for reading, protected for writing)
+		orders := v1.Group("/orders")
+		{
+			// Public routes (no authentication required)
+			orders.GET("/order-number/:order_number", orderHandler.GetOrderByOrderNumber)
 		}
 
 		// Protected routes
@@ -295,6 +303,65 @@ func SetupRoutes(r *gin.Engine) {
 				// Utility - require system admin permission
 				permissionManagement.POST("/initialize", middleware.AdminPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.InitializeDefaultPermissions)
 				permissionManagement.POST("/users/:user_id/sync-role/:role_name", middleware.ManagePermissionMiddleware(model.ResourceTypeUser), permissionHandler.SyncUserRole)
+			}
+
+			// Order management routes (require authentication and permissions)
+			orderManagement := protected.Group("/orders")
+			{
+				// Order CRUD - requires order permissions
+				orderManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.CreateOrder)
+				orderManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetAllOrders)
+				orderManagement.GET("/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetOrderByID)
+				orderManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.UpdateOrder)
+				orderManagement.DELETE("/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeOrder), orderHandler.DeleteOrder)
+
+				// Order status management - requires manage permission
+				orderManagement.POST("/:id/cancel", middleware.ManagePermissionMiddleware(model.ResourceTypeOrder), orderHandler.CancelOrder)
+				orderManagement.POST("/:id/confirm", middleware.ManagePermissionMiddleware(model.ResourceTypeOrder), orderHandler.ConfirmOrder)
+				orderManagement.POST("/:id/ship", middleware.ManagePermissionMiddleware(model.ResourceTypeOrder), orderHandler.ShipOrder)
+				orderManagement.POST("/:id/deliver", middleware.ManagePermissionMiddleware(model.ResourceTypeOrder), orderHandler.DeliverOrder)
+
+				// Order items - requires read permission
+				orderManagement.GET("/:id/items", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetOrderItems)
+
+				// User orders - requires read permission
+				orderManagement.GET("/user/:user_id", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetOrdersByUser)
+			}
+
+			// Admin order management routes (require admin role and order permissions)
+			adminOrderManagement := protected.Group("/admin/orders")
+			adminOrderManagement.Use(authMiddleware.AdminMiddleware())
+			{
+				// Admin can create orders for any user - requires order write permission
+				adminOrderManagement.POST("/user/:user_id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.CreateOrderForUser)
+			}
+
+			// Cart management routes (require authentication)
+			cartManagement := protected.Group("/carts")
+			{
+				// Cart CRUD - requires order write permission
+				cartManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.CreateCart)
+				cartManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetCart)
+				cartManagement.PUT("/:cart_id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.UpdateCart)
+				cartManagement.DELETE("/:cart_id", middleware.DeletePermissionMiddleware(model.ResourceTypeOrder), orderHandler.DeleteCart)
+				cartManagement.POST("/:cart_id/clear", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.ClearCart)
+
+				// Cart items - requires order write permission
+				cartManagement.POST("/:cart_id/items", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.AddToCart)
+				cartManagement.PUT("/:cart_id/items/:item_id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.UpdateCartItem)
+				cartManagement.DELETE("/:cart_id/items/:item_id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.RemoveFromCart)
+				cartManagement.GET("/:cart_id/items", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetCartItems)
+
+				// Convert cart to order - requires order write permission
+				cartManagement.POST("/:cart_id/convert-to-order", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.ConvertCartToOrder)
+			}
+
+			// Order statistics routes (require read permission)
+			orderStats := protected.Group("/order-stats")
+			{
+				orderStats.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetOrderStats)
+				orderStats.GET("/user/:user_id", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetOrderStatsByUser)
+				orderStats.GET("/revenue", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetRevenueStats)
 			}
 
 			// Moderator routes (require moderator role and appropriate permissions)
