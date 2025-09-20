@@ -34,7 +34,7 @@ type OrderService interface {
 	// Cart
 	CreateCart(req *model.CartCreateRequest, userID uint) (*model.CartResponse, error)
 	GetCart(userID uint, sessionID string) (*model.CartResponse, error)
-	UpdateCart(cartID uint, req *model.CartCreateRequest, userID uint) (*model.CartResponse, error)
+	UpdateCart(cartID uint, req *model.CartUpdateRequest, userID uint) (*model.CartResponse, error)
 	DeleteCart(cartID uint, userID uint) error
 	ClearCart(cartID uint, userID uint) error
 
@@ -44,6 +44,7 @@ type OrderService interface {
 	RemoveFromCart(cartID, itemID uint, userID uint) error
 	GetCartItems(cartID uint) ([]model.CartItemResponse, error)
 	SyncCartWithUser(cartID, userID uint) error
+	GetCartStats() (map[string]interface{}, error)
 
 	// Payments
 	CreatePayment(req *model.PaymentCreateRequest, userID uint) (*model.PaymentResponse, error)
@@ -819,7 +820,7 @@ func (s *orderService) GetCart(userID uint, sessionID string) (*model.CartRespon
 	return nil, errors.New("not implemented")
 }
 
-func (s *orderService) UpdateCart(cartID uint, req *model.CartCreateRequest, userID uint) (*model.CartResponse, error) {
+func (s *orderService) UpdateCart(cartID uint, req *model.CartUpdateRequest, userID uint) (*model.CartResponse, error) {
 	// Implementation would go here
 	return nil, errors.New("not implemented")
 }
@@ -857,6 +858,11 @@ func (s *orderService) GetCartItems(cartID uint) ([]model.CartItemResponse, erro
 func (s *orderService) SyncCartWithUser(cartID, userID uint) error {
 	// Implementation would go here
 	return errors.New("not implemented")
+}
+
+func (s *orderService) GetCartStats() (map[string]interface{}, error) {
+	// Implementation would go here
+	return nil, errors.New("not implemented")
 }
 
 func (s *orderService) CreatePayment(req *model.PaymentCreateRequest, userID uint) (*model.PaymentResponse, error) {

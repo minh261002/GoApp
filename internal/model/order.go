@@ -519,6 +519,13 @@ type ShippingHistoryResponse struct {
 	CreatedAt     time.Time      `json:"created_at"`
 }
 
+// Cart Update Request
+type CartUpdateRequest struct {
+	ShippingAddress *string `json:"shipping_address,omitempty"`
+	BillingAddress  *string `json:"billing_address,omitempty"`
+	Notes           *string `json:"notes,omitempty"`
+}
+
 // OrderStatsResponse represents order statistics
 type OrderStatsResponse struct {
 	TotalOrders       int64   `json:"total_orders"`

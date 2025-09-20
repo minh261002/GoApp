@@ -55,6 +55,9 @@ func SetupRoutes(r *gin.Engine) {
 	// Initialize order service
 	orderService := service.NewOrderService()
 
+	// Initialize cart handler (using order service)
+	cartHandler := handler.NewCartHandler(orderService)
+
 	// Initialize payment gateway service
 	payOSConfig := payment.PayOSConfig{
 		ClientID:    "YOUR_PAYOS_CLIENT_ID",    // TODO: Get from config
@@ -470,20 +473,30 @@ func SetupRoutes(r *gin.Engine) {
 			cartManagement := protected.Group("/carts")
 			{
 				// Cart CRUD - requires order write permission
-				cartManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.CreateCart)
-				cartManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetCart)
-				cartManagement.PUT("/:cart_id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.UpdateCart)
-				cartManagement.DELETE("/:cart_id", middleware.DeletePermissionMiddleware(model.ResourceTypeOrder), orderHandler.DeleteCart)
-				cartManagement.POST("/:cart_id/clear", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.ClearCart)
+				cartManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartHandler.CreateCart)
+				cartManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), cartHandler.GetCart)
+				cartManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartHandler.UpdateCart)
+				cartManagement.DELETE("/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeOrder), cartHandler.DeleteCart)
+				cartManagement.POST("/:id/clear", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartHandler.ClearCart)
 
 				// Cart items - requires order write permission
-				cartManagement.POST("/:cart_id/items", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.AddToCart)
-				cartManagement.PUT("/:cart_id/items/:item_id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.UpdateCartItem)
-				cartManagement.DELETE("/:cart_id/items/:item_id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.RemoveFromCart)
-				cartManagement.GET("/:cart_id/items", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderHandler.GetCartItems)
+				cartManagement.POST("/:id/items", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartHandler.AddToCart)
+				cartManagement.PUT("/:id/items/:item_id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartHandler.UpdateCartItem)
+				cartManagement.DELETE("/:id/items/:item_id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartHandler.RemoveFromCart)
+				cartManagement.GET("/:id/items", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), cartHandler.GetCartItems)
+
+				// Cart sync - requires order write permission
+				cartManagement.POST("/:id/sync", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartHandler.SyncCartWithUser)
 
 				// Convert cart to order - requires order write permission
-				cartManagement.POST("/:cart_id/convert-to-order", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.ConvertCartToOrder)
+				cartManagement.POST("/:id/convert-to-order", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.ConvertCartToOrder)
+			}
+
+			// Cart statistics routes (require read permission)
+			cartStats := protected.Group("/carts")
+			cartStats.Use(authMiddleware.AdminMiddleware())
+			{
+				cartStats.GET("/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), cartHandler.GetCartStats)
 			}
 
 			// Order statistics routes (require read permission)

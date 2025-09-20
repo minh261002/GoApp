@@ -502,7 +502,7 @@ func (h *OrderHandler) UpdateCart(c *gin.Context) {
 		return
 	}
 
-	var req model.CartCreateRequest
+	var req model.CartUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.ErrorResponse(c, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
