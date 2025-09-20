@@ -120,6 +120,7 @@ func Migrate() error {
 		&model.User{},
 		&model.Session{},
 		&model.OTP{},
+		&model.Brand{},
 		// Add more models here as needed
 	}
 
