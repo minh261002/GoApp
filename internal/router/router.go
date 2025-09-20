@@ -2,6 +2,7 @@ package router
 
 import (
 	"go_app/internal/handler"
+	"go_app/internal/model"
 	"go_app/pkg/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,7 @@ func SetupRoutes(r *gin.Engine) {
 	productHandler := handler.NewProductHandler()
 	uploadHandler := handler.NewUploadHandler()
 	inventoryHandler := handler.NewInventoryHandler()
+	permissionHandler := handler.NewPermissionHandler()
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -108,6 +110,13 @@ func SetupRoutes(r *gin.Engine) {
 			inventory.GET("/value", inventoryHandler.GetStockValue)
 		}
 
+		// Permission routes (public for checking, protected for management)
+		permissions := v1.Group("/permissions")
+		{
+			// Public routes (no authentication required)
+			permissions.POST("/check", permissionHandler.CheckPermission)
+		}
+
 		// Protected routes
 		protected := v1.Group("/")
 		protected.Use(authMiddleware.AuthMiddleware())
@@ -119,94 +128,191 @@ func SetupRoutes(r *gin.Engine) {
 				authProtected.POST("/logout", authHandler.Logout)
 			}
 
-			// Brand management routes (require authentication)
+			// Brand management routes (require authentication and permissions)
 			brandManagement := protected.Group("/brands")
 			{
-				brandManagement.POST("", brandHandler.CreateBrand)
-				brandManagement.PUT("/:id", brandHandler.UpdateBrand)
-				brandManagement.DELETE("/:id", brandHandler.DeleteBrand)
-				brandManagement.PATCH("/:id/status", brandHandler.UpdateBrandStatus)
-				brandManagement.PATCH("/bulk-status", brandHandler.BulkUpdateBrandStatus)
+				// Create brand - requires write permission
+				brandManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeBrand), brandHandler.CreateBrand)
+				// Update brand - requires write permission
+				brandManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeBrand), brandHandler.UpdateBrand)
+				// Delete brand - requires delete permission
+				brandManagement.DELETE("/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeBrand), brandHandler.DeleteBrand)
+				// Update status - requires write permission
+				brandManagement.PATCH("/:id/status", middleware.WritePermissionMiddleware(model.ResourceTypeBrand), brandHandler.UpdateBrandStatus)
+				// Bulk update status - requires write permission
+				brandManagement.PATCH("/bulk-status", middleware.WritePermissionMiddleware(model.ResourceTypeBrand), brandHandler.BulkUpdateBrandStatus)
 			}
 
-			// Category management routes (require authentication)
+			// Category management routes (require authentication and permissions)
 			categoryManagement := protected.Group("/categories")
 			{
-				categoryManagement.POST("", categoryHandler.CreateCategory)
-				categoryManagement.PUT("/:id", categoryHandler.UpdateCategory)
-				categoryManagement.DELETE("/:id", categoryHandler.DeleteCategory)
-				categoryManagement.PATCH("/:id/status", categoryHandler.UpdateCategoryStatus)
-				categoryManagement.PATCH("/bulk-status", categoryHandler.BulkUpdateCategoryStatus)
+				// Create category - requires write permission
+				categoryManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeCategory), categoryHandler.CreateCategory)
+				// Update category - requires write permission
+				categoryManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeCategory), categoryHandler.UpdateCategory)
+				// Delete category - requires delete permission
+				categoryManagement.DELETE("/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeCategory), categoryHandler.DeleteCategory)
+				// Update status - requires write permission
+				categoryManagement.PATCH("/:id/status", middleware.WritePermissionMiddleware(model.ResourceTypeCategory), categoryHandler.UpdateCategoryStatus)
+				// Bulk update status - requires write permission
+				categoryManagement.PATCH("/bulk-status", middleware.WritePermissionMiddleware(model.ResourceTypeCategory), categoryHandler.BulkUpdateCategoryStatus)
 			}
 
-			// Product management routes (require authentication)
+			// Product management routes (require authentication and permissions)
 			productManagement := protected.Group("/products")
 			{
-				productManagement.POST("", productHandler.CreateProduct)
-				productManagement.PUT("/:id", productHandler.UpdateProduct)
-				productManagement.DELETE("/:id", productHandler.DeleteProduct)
-				productManagement.PATCH("/:id/stock", productHandler.UpdateProductStock)
-				productManagement.PATCH("/:id/status", productHandler.UpdateProductStatus)
-				productManagement.PATCH("/bulk-status", productHandler.BulkUpdateProductStatus)
+				// Create product - requires write permission
+				productManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.CreateProduct)
+				// Update product - requires write permission
+				productManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.UpdateProduct)
+				// Delete product - requires delete permission
+				productManagement.DELETE("/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeProduct), productHandler.DeleteProduct)
+				// Update stock - requires write permission
+				productManagement.PATCH("/:id/stock", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.UpdateProductStock)
+				// Update status - requires write permission
+				productManagement.PATCH("/:id/status", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.UpdateProductStatus)
+				// Bulk update status - requires write permission
+				productManagement.PATCH("/bulk-status", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.BulkUpdateProductStatus)
 			}
 
-			// Upload management routes (require authentication)
+			// Upload management routes (require authentication and permissions)
 			uploadManagement := protected.Group("/upload")
 			{
-				uploadManagement.POST("", uploadHandler.UploadFile)
-				uploadManagement.POST("/image", uploadHandler.UploadImage)
-				uploadManagement.POST("/brand-logo", uploadHandler.UploadBrandLogo)
-				uploadManagement.POST("/document", uploadHandler.UploadDocument)
-				uploadManagement.POST("/multiple", uploadHandler.UploadMultipleFiles)
-				uploadManagement.DELETE("", uploadHandler.DeleteFile)
+				// Upload file - requires write permission
+				uploadManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeUpload), uploadHandler.UploadFile)
+				// Upload image - requires write permission
+				uploadManagement.POST("/image", middleware.WritePermissionMiddleware(model.ResourceTypeUpload), uploadHandler.UploadImage)
+				// Upload brand logo - requires write permission
+				uploadManagement.POST("/brand-logo", middleware.WritePermissionMiddleware(model.ResourceTypeUpload), uploadHandler.UploadBrandLogo)
+				// Upload document - requires write permission
+				uploadManagement.POST("/document", middleware.WritePermissionMiddleware(model.ResourceTypeUpload), uploadHandler.UploadDocument)
+				// Upload multiple files - requires write permission
+				uploadManagement.POST("/multiple", middleware.WritePermissionMiddleware(model.ResourceTypeUpload), uploadHandler.UploadMultipleFiles)
+				// Delete file - requires delete permission
+				uploadManagement.DELETE("", middleware.DeletePermissionMiddleware(model.ResourceTypeUpload), uploadHandler.DeleteFile)
 			}
 
-			// Inventory management routes (require authentication)
+			// Inventory management routes (require authentication and permissions)
 			inventoryManagement := protected.Group("/inventory")
 			{
 				// Inventory Movements
-				inventoryManagement.POST("/movements", inventoryHandler.CreateMovement)
-				inventoryManagement.GET("/movements", inventoryHandler.GetMovements)
-				inventoryManagement.GET("/movements/:id", inventoryHandler.GetMovementByID)
-				inventoryManagement.PUT("/movements/:id", inventoryHandler.UpdateMovement)
-				inventoryManagement.DELETE("/movements/:id", inventoryHandler.DeleteMovement)
-				inventoryManagement.PATCH("/movements/:id/approve", inventoryHandler.ApproveMovement)
-				inventoryManagement.PATCH("/movements/:id/complete", inventoryHandler.CompleteMovement)
-				inventoryManagement.GET("/movements/product/:product_id", inventoryHandler.GetMovementsByProduct)
-				inventoryManagement.GET("/movements/reference/:reference", inventoryHandler.GetMovementsByReference)
+				// Create movement - requires write permission
+				inventoryManagement.POST("/movements", middleware.WritePermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.CreateMovement)
+				// Get movements - requires read permission
+				inventoryManagement.GET("/movements", middleware.ReadPermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.GetMovements)
+				// Get movement by ID - requires read permission
+				inventoryManagement.GET("/movements/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.GetMovementByID)
+				// Update movement - requires write permission
+				inventoryManagement.PUT("/movements/:id", middleware.WritePermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.UpdateMovement)
+				// Delete movement - requires delete permission
+				inventoryManagement.DELETE("/movements/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.DeleteMovement)
+				// Approve movement - requires manage permission
+				inventoryManagement.PATCH("/movements/:id/approve", middleware.ManagePermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.ApproveMovement)
+				// Complete movement - requires manage permission
+				inventoryManagement.PATCH("/movements/:id/complete", middleware.ManagePermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.CompleteMovement)
+				// Get movements by product - requires read permission
+				inventoryManagement.GET("/movements/product/:product_id", middleware.ReadPermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.GetMovementsByProduct)
+				// Get movements by reference - requires read permission
+				inventoryManagement.GET("/movements/reference/:reference", middleware.ReadPermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.GetMovementsByReference)
 
 				// Stock Levels
-				inventoryManagement.PATCH("/stock-levels/product/:product_id/settings", inventoryHandler.UpdateStockLevelSettings)
-				inventoryManagement.POST("/stock-levels/product/:product_id/reserve", inventoryHandler.ReserveStock)
-				inventoryManagement.POST("/stock-levels/product/:product_id/release", inventoryHandler.ReleaseStock)
+				// Update stock level settings - requires manage permission
+				inventoryManagement.PATCH("/stock-levels/product/:product_id/settings", middleware.ManagePermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.UpdateStockLevelSettings)
+				// Reserve stock - requires write permission
+				inventoryManagement.POST("/stock-levels/product/:product_id/reserve", middleware.WritePermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.ReserveStock)
+				// Release stock - requires write permission
+				inventoryManagement.POST("/stock-levels/product/:product_id/release", middleware.WritePermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.ReleaseStock)
 
 				// Inventory Adjustments
-				inventoryManagement.POST("/adjustments", inventoryHandler.CreateAdjustment)
-				inventoryManagement.GET("/adjustments", inventoryHandler.GetAdjustments)
-				inventoryManagement.GET("/adjustments/:id", inventoryHandler.GetAdjustmentByID)
-				inventoryManagement.GET("/adjustments/product/:product_id", inventoryHandler.GetAdjustmentsByProduct)
+				// Create adjustment - requires manage permission
+				inventoryManagement.POST("/adjustments", middleware.ManagePermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.CreateAdjustment)
+				// Get adjustments - requires read permission
+				inventoryManagement.GET("/adjustments", middleware.ReadPermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.GetAdjustments)
+				// Get adjustment by ID - requires read permission
+				inventoryManagement.GET("/adjustments/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.GetAdjustmentByID)
+				// Get adjustments by product - requires read permission
+				inventoryManagement.GET("/adjustments/product/:product_id", middleware.ReadPermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.GetAdjustmentsByProduct)
 
 				// Reports
-				inventoryManagement.GET("/movements/stats", inventoryHandler.GetMovementStats)
+				// Get movement stats - requires read permission
+				inventoryManagement.GET("/movements/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeInventory), inventoryHandler.GetMovementStats)
 			}
 
-			// Admin routes
+			// Admin routes (require admin role and system permissions)
 			admin := protected.Group("/admin")
 			admin.Use(authMiddleware.AdminMiddleware())
 			{
-				// Add admin routes here
-				admin.GET("/users", func(c *gin.Context) {
+				// User management - requires user admin permission
+				admin.GET("/users", middleware.AdminPermissionMiddleware(model.ResourceTypeUser), func(c *gin.Context) {
 					c.JSON(200, gin.H{"message": "Admin users endpoint"})
+				})
+				// System management - requires system admin permission
+				admin.GET("/system", middleware.AdminPermissionMiddleware(model.ResourceTypeSystem), func(c *gin.Context) {
+					c.JSON(200, gin.H{"message": "System management endpoint"})
 				})
 			}
 
-			// Moderator routes
+			// Permission management routes (require authentication and system permissions)
+			permissionManagement := protected.Group("/permissions")
+			{
+				// Permissions - require system manage permission
+				permissionManagement.POST("", middleware.ManagePermissionMiddleware(model.ResourceTypeSystem), permissionHandler.CreatePermission)
+				permissionManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.GetAllPermissions)
+				permissionManagement.GET("/name/:name", middleware.ReadPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.GetPermissionByName)
+				permissionManagement.GET("/resource/:resource", middleware.ReadPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.GetPermissionsByResource)
+				permissionManagement.GET("/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.GetPermissionByID)
+				permissionManagement.PUT("/:id", middleware.ManagePermissionMiddleware(model.ResourceTypeSystem), permissionHandler.UpdatePermission)
+				permissionManagement.DELETE("/:id", middleware.ManagePermissionMiddleware(model.ResourceTypeSystem), permissionHandler.DeletePermission)
+
+				// Roles - require system manage permission
+				permissionManagement.POST("/roles", middleware.ManagePermissionMiddleware(model.ResourceTypeSystem), permissionHandler.CreateRole)
+				permissionManagement.GET("/roles", middleware.ReadPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.GetAllRoles)
+				permissionManagement.GET("/roles/name/:name", middleware.ReadPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.GetRoleByName)
+				permissionManagement.GET("/roles/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.GetRoleByID)
+				permissionManagement.PUT("/roles/:id", middleware.ManagePermissionMiddleware(model.ResourceTypeSystem), permissionHandler.UpdateRole)
+				permissionManagement.DELETE("/roles/:id", middleware.ManagePermissionMiddleware(model.ResourceTypeSystem), permissionHandler.DeleteRole)
+
+				// Role Permissions - require system manage permission
+				permissionManagement.POST("/roles/:role_id/permissions/:permission_id", middleware.ManagePermissionMiddleware(model.ResourceTypeSystem), permissionHandler.AssignPermissionToRole)
+				permissionManagement.DELETE("/roles/:role_id/permissions/:permission_id", middleware.ManagePermissionMiddleware(model.ResourceTypeSystem), permissionHandler.RevokePermissionFromRole)
+				permissionManagement.GET("/roles/:role_id/permissions", middleware.ReadPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.GetRolePermissions)
+				permissionManagement.PUT("/roles/:role_id/permissions", middleware.ManagePermissionMiddleware(model.ResourceTypeSystem), permissionHandler.UpdateRolePermissions)
+
+				// User Permissions - require user manage permission
+				permissionManagement.POST("/users/:user_id/permissions", middleware.ManagePermissionMiddleware(model.ResourceTypeUser), permissionHandler.AssignPermissionToUser)
+				permissionManagement.DELETE("/users/:user_id/permissions/:permission_id", middleware.ManagePermissionMiddleware(model.ResourceTypeUser), permissionHandler.RevokePermissionFromUser)
+				permissionManagement.GET("/users/:user_id/permissions", middleware.ReadPermissionMiddleware(model.ResourceTypeUser), permissionHandler.GetUserPermissions)
+				permissionManagement.GET("/users/:user_id/effective-permissions", middleware.ReadPermissionMiddleware(model.ResourceTypeUser), permissionHandler.GetUserEffectivePermissions)
+				permissionManagement.GET("/users/:user_id/permissions/resource/:resource", middleware.ReadPermissionMiddleware(model.ResourceTypeUser), permissionHandler.GetUserPermissionsForResource)
+
+				// Audit & Logging - require system read permission
+				permissionManagement.GET("/logs", middleware.ReadPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.GetPermissionLogs)
+
+				// Statistics - require system read permission
+				permissionManagement.GET("/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.GetPermissionStats)
+				permissionManagement.GET("/users/:user_id/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeUser), permissionHandler.GetUserPermissionStats)
+
+				// Utility - require system admin permission
+				permissionManagement.POST("/initialize", middleware.AdminPermissionMiddleware(model.ResourceTypeSystem), permissionHandler.InitializeDefaultPermissions)
+				permissionManagement.POST("/users/:user_id/sync-role/:role_name", middleware.ManagePermissionMiddleware(model.ResourceTypeUser), permissionHandler.SyncUserRole)
+			}
+
+			// Moderator routes (require moderator role and appropriate permissions)
 			moderator := protected.Group("/moderator")
 			moderator.Use(authMiddleware.ModeratorMiddleware())
 			{
-				// Add moderator routes here
-				moderator.GET("/dashboard", func(c *gin.Context) {
+				// Moderator dashboard - requires read permission for multiple resources
+				moderator.GET("/dashboard", middleware.MultiplePermissionMiddleware([]middleware.PermissionRequirement{
+					middleware.BrandReadPermission,
+					middleware.CategoryReadPermission,
+					middleware.ProductReadPermission,
+					middleware.InventoryReadPermission,
+				}), func(c *gin.Context) {
 					c.JSON(200, gin.H{"message": "Moderator dashboard"})
+				})
+				// Content moderation - requires write permission for content management
+				moderator.GET("/content", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), func(c *gin.Context) {
+					c.JSON(200, gin.H{"message": "Content moderation"})
 				})
 			}
 		}
