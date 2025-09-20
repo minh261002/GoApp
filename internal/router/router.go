@@ -34,6 +34,7 @@ func SetupRoutes(r *gin.Engine) {
 	couponHandler := handler.NewCouponHandler()
 	bannerHandler := handler.NewBannerHandler()
 	sliderHandler := handler.NewSliderHandler()
+	wishlistHandler := handler.NewWishlistHandler()
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -206,6 +207,19 @@ func SetupRoutes(r *gin.Engine) {
 			sliders.GET("/search", sliderHandler.SearchSliders)
 			sliders.POST("/view", sliderHandler.TrackSliderView)
 			sliders.POST("/item/click", sliderHandler.TrackSliderItemClick)
+		}
+
+		// Wishlist public routes (no authentication required)
+		wishlists := v1.Group("/wishlists")
+		{
+			// Public wishlist routes
+			wishlists.GET("/public", wishlistHandler.GetPublicWishlists)
+			wishlists.GET("/search", wishlistHandler.SearchWishlists)
+			wishlists.GET("/slug/:slug", wishlistHandler.GetWishlistBySlug)
+			wishlists.GET("/:id", wishlistHandler.GetWishlistByID)
+			wishlists.GET("/:id/items", wishlistHandler.GetWishlistItems)
+			wishlists.GET("/share/:token", wishlistHandler.GetWishlistShareByToken)
+			wishlists.GET("/stats", wishlistHandler.GetWishlistStats)
 		}
 
 		// Protected routes
@@ -604,6 +618,54 @@ func SetupRoutes(r *gin.Engine) {
 				sliderManagement.PUT("/items/:id", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.UpdateSliderItem)
 				sliderManagement.DELETE("/items/:id", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.DeleteSliderItem)
 				sliderManagement.PUT("/:slider_id/reorder", middleware.WritePermissionMiddleware(model.ResourceTypeSlider), sliderHandler.ReorderSliderItems)
+			}
+
+			// Wishlist management routes (require authentication and permissions)
+			wishlistManagement := protected.Group("/wishlists")
+			{
+				// Wishlist CRUD - requires wishlist permissions
+				wishlistManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.CreateWishlist)
+				wishlistManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetWishlistsByUser)
+				wishlistManagement.GET("/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetWishlistByID)
+				wishlistManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.UpdateWishlist)
+				wishlistManagement.DELETE("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.DeleteWishlist)
+
+				// Wishlist management - requires wishlist permissions
+				wishlistManagement.PUT("/:id/set-default", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.SetDefaultWishlist)
+				wishlistManagement.GET("/search", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.SearchWishlists)
+
+				// Wishlist items - requires wishlist permissions
+				wishlistManagement.POST("/items", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.AddItemToWishlist)
+				wishlistManagement.GET("/items/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetWishlistItemByID)
+				wishlistManagement.PUT("/items/:id", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.UpdateWishlistItem)
+				wishlistManagement.DELETE("/items/:id", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.DeleteWishlistItem)
+				wishlistManagement.PUT("/:wishlist_id/reorder", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.ReorderWishlistItems)
+				wishlistManagement.PUT("/items/:item_id/move", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.MoveItemToWishlist)
+
+				// Favorites - requires wishlist permissions
+				wishlistManagement.POST("/favorites", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.AddToFavorites)
+				wishlistManagement.GET("/favorites", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetFavoritesByUser)
+				wishlistManagement.GET("/favorites/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetFavoriteByID)
+				wishlistManagement.PUT("/favorites/:id", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.UpdateFavorite)
+				wishlistManagement.DELETE("/favorites/:id", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.RemoveFromFavorites)
+				wishlistManagement.DELETE("/favorites/product/:product_id", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.RemoveFromFavoritesByProduct)
+
+				// Wishlist sharing - requires wishlist permissions
+				wishlistManagement.POST("/:id/share", middleware.WritePermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.ShareWishlist)
+				wishlistManagement.GET("/:id/shares", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetWishlistSharesByWishlist)
+				wishlistManagement.GET("/shares", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetWishlistSharesByUser)
+
+				// Analytics - requires read permission
+				wishlistManagement.GET("/:id/analytics", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetWishlistAnalytics)
+				wishlistManagement.GET("/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetUserWishlistStats)
+				wishlistManagement.POST("/:id/track-view", wishlistHandler.TrackWishlistView)
+				wishlistManagement.POST("/items/:id/track-view", wishlistHandler.TrackWishlistItemView)
+				wishlistManagement.POST("/items/:id/track-click", wishlistHandler.TrackWishlistItemClick)
+
+				// Price tracking - requires read permission
+				wishlistManagement.POST("/update-prices", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.UpdateWishlistItemPrices)
+				wishlistManagement.GET("/price-changes", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetItemsWithPriceChanges)
+				wishlistManagement.GET("/price-notifications", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetItemsForPriceNotification)
 			}
 
 			// Moderator routes (require moderator role and appropriate permissions)

@@ -34,6 +34,7 @@ const (
 	ResourceTypePoint     ResourceType = "point"
 	ResourceTypeBanner    ResourceType = "banner"
 	ResourceTypeSlider    ResourceType = "slider"
+	ResourceTypeWishlist  ResourceType = "wishlist"
 	ResourceTypeCustomer  ResourceType = "customer"
 	ResourceTypeReport    ResourceType = "report"
 	ResourceTypeSystem    ResourceType = "system"

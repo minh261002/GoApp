@@ -189,6 +189,12 @@ INSERT INTO permissions (name, display_name, description, resource, action, is_s
 ('slider.delete', 'Delete Sliders', 'Delete slider records', 'slider', 'delete', TRUE, TRUE),
 ('slider.manage', 'Manage Sliders', 'Full slider management', 'slider', 'manage', TRUE, TRUE),
 
+-- Wishlist permissions
+('wishlist.read', 'Read Wishlists', 'View wishlist information', 'wishlist', 'read', TRUE, TRUE),
+('wishlist.write', 'Create/Update Wishlists', 'Create and update wishlists', 'wishlist', 'write', TRUE, TRUE),
+('wishlist.delete', 'Delete Wishlists', 'Delete wishlist records', 'wishlist', 'delete', TRUE, TRUE),
+('wishlist.manage', 'Manage Wishlists', 'Full wishlist management', 'wishlist', 'manage', TRUE, TRUE),
+
 -- Customer permissions
 ('customer.read', 'Read Customers', 'View customer information', 'customer', 'read', TRUE, TRUE),
 ('customer.write', 'Create/Update Customers', 'Create and update customer information', 'customer', 'write', TRUE, TRUE),
@@ -225,7 +231,7 @@ SELECT r.id, p.id, 1
 FROM roles r, permissions p
 WHERE r.name = 'moderator' 
 AND p.action IN ('read', 'write')
-AND p.resource IN ('user', 'brand', 'category', 'product', 'inventory', 'upload', 'order', 'customer', 'banner', 'slider');
+AND p.resource IN ('user', 'brand', 'category', 'product', 'inventory', 'upload', 'order', 'customer', 'banner', 'slider', 'wishlist');
 
 -- User gets read permissions for most resources
 INSERT INTO role_permissions (role_id, permission_id, granted_by)
@@ -233,7 +239,7 @@ SELECT r.id, p.id, 1
 FROM roles r, permissions p
 WHERE r.name = 'user' 
 AND p.action = 'read'
-AND p.resource IN ('brand', 'category', 'product', 'inventory', 'upload', 'banner', 'slider');
+AND p.resource IN ('brand', 'category', 'product', 'inventory', 'upload', 'banner', 'slider', 'wishlist');
 
 -- Guest gets read permissions for public content
 INSERT INTO role_permissions (role_id, permission_id, granted_by)
@@ -241,7 +247,7 @@ SELECT r.id, p.id, 1
 FROM roles r, permissions p
 WHERE r.name = 'guest' 
 AND p.action = 'read'
-AND p.resource IN ('brand', 'category', 'product', 'inventory', 'banner', 'slider');
+AND p.resource IN ('brand', 'category', 'product', 'inventory', 'banner', 'slider', 'wishlist');
 
 -- +migrate Down
 DROP TABLE IF EXISTS permission_logs;

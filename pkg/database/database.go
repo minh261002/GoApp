@@ -150,6 +150,10 @@ func Migrate() error {
 		&model.Banner{},
 		&model.Slider{},
 		&model.SliderItem{},
+		&model.Wishlist{},
+		&model.WishlistItem{},
+		&model.Favorite{},
+		&model.WishlistShare{},
 		// Add more models here as needed
 	}
 
