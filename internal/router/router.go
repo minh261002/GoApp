@@ -3,6 +3,8 @@ package router
 import (
 	"go_app/internal/handler"
 	"go_app/internal/model"
+	"go_app/internal/repository"
+	"go_app/internal/service"
 	"go_app/pkg/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -35,6 +37,14 @@ func SetupRoutes(r *gin.Engine) {
 	bannerHandler := handler.NewBannerHandler()
 	sliderHandler := handler.NewSliderHandler()
 	wishlistHandler := handler.NewWishlistHandler()
+	// Initialize search service
+	searchRepo := repository.NewSearchRepository()
+	productRepo := repository.NewProductRepository()
+	categoryRepo := repository.NewCategoryRepository()
+	brandRepo := repository.NewBrandRepository()
+	userRepo := repository.NewUserRepository()
+	searchService := service.NewSearchService(searchRepo, productRepo, categoryRepo, brandRepo, userRepo)
+	searchHandler := handler.NewSearchHandler(searchService)
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -666,6 +676,33 @@ func SetupRoutes(r *gin.Engine) {
 				wishlistManagement.POST("/update-prices", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.UpdateWishlistItemPrices)
 				wishlistManagement.GET("/price-changes", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetItemsWithPriceChanges)
 				wishlistManagement.GET("/price-notifications", middleware.ReadPermissionMiddleware(model.ResourceTypeWishlist), wishlistHandler.GetItemsForPriceNotification)
+			}
+
+			// Search routes (public and protected)
+			search := v1.Group("/search")
+			{
+				// Public search routes
+				search.GET("/products", searchHandler.SearchProducts)
+				search.GET("/suggestions", searchHandler.GetSearchSuggestions)
+				search.GET("/filter-options", searchHandler.GetFilterOptions)
+				search.GET("/popular", searchHandler.GetPopularSearches)
+				search.GET("/trends", searchHandler.GetSearchTrends)
+			}
+
+			// Protected search routes
+			searchProtected := protected.Group("/search")
+			{
+				// Search analytics - requires read permission
+				searchProtected.GET("/analytics", middleware.ReadPermissionMiddleware(model.ResourceTypeProduct), searchHandler.GetSearchAnalytics)
+				searchProtected.GET("/logs", middleware.ReadPermissionMiddleware(model.ResourceTypeProduct), searchHandler.GetSearchLogs)
+				searchProtected.GET("/index-stats", middleware.ReadPermissionMiddleware(model.ResourceTypeProduct), searchHandler.GetSearchIndexStats)
+
+				// Search index management - requires write permission
+				searchProtected.POST("/index/create", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), searchHandler.CreateSearchIndex)
+				searchProtected.PUT("/index/update/:product_id", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), searchHandler.UpdateSearchIndex)
+				searchProtected.DELETE("/index/delete/:product_id", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), searchHandler.DeleteSearchIndex)
+				searchProtected.POST("/index/rebuild", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), searchHandler.RebuildSearchIndex)
+				searchProtected.DELETE("/logs/delete", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), searchHandler.DeleteSearchLogs)
 			}
 
 			// Moderator routes (require moderator role and appropriate permissions)

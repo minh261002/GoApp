@@ -35,6 +35,7 @@ const (
 	ResourceTypeBanner    ResourceType = "banner"
 	ResourceTypeSlider    ResourceType = "slider"
 	ResourceTypeWishlist  ResourceType = "wishlist"
+	ResourceTypeSearch    ResourceType = "search"
 	ResourceTypeCustomer  ResourceType = "customer"
 	ResourceTypeReport    ResourceType = "report"
 	ResourceTypeSystem    ResourceType = "system"

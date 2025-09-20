@@ -154,6 +154,10 @@ func Migrate() error {
 		&model.WishlistItem{},
 		&model.Favorite{},
 		&model.WishlistShare{},
+		&model.SearchIndex{},
+		&model.SearchLog{},
+		&model.SearchSuggestion{},
+		&model.SearchAnalytics{},
 		// Add more models here as needed
 	}
 
