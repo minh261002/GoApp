@@ -12,7 +12,7 @@ services:
       MYSQL_USER: go_app_user
       MYSQL_PASSWORD: go_app_password
     ports:
-      - "3306:3306"
+      - "13306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./migrations:/docker-entrypoint-initdb.d
@@ -32,15 +32,41 @@ services:
     container_name: go_app_backend
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "18080:8080"
     environment:
+      # Server Configuration
+      - PORT=8080
+      - HOST=0.0.0.0
+      - GIN_MODE=release
+      
+      # Database Configuration
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=go_app_user
       - DB_PASSWORD=go_app_password
       - DB_NAME=go_app_db
-      - GIN_MODE=release
-      - PORT=8080
+      
+      # Redis Configuration
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      
+      # JWT Configuration
+      - JWT_SECRET=your-jwt-secret-key-change-in-production
+      - JWT_ACCESS_EXPIRY=24
+      - JWT_REFRESH_EXPIRY=168
+      
+      # Logging
+      - LOG_LEVEL=info
+      
+      # Email Configuration (optional)
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=
+      - SMTP_PASSWORD=
+      - FROM_EMAIL=
+      - FROM_NAME=Go App
     depends_on:
       mysql:
         condition: service_healthy
@@ -50,6 +76,12 @@ services:
       - go_app_network
     volumes:
       - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      timeout: 5s
+      retries: 3
+      interval: 30s
+      start_period: 10s
 
   # Redis 
   redis:
@@ -57,7 +89,7 @@ services:
     container_name: go_app_redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "16379:6379"
     volumes:
       - redis_data:/data
     networks:

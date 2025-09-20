@@ -1,0 +1,61 @@
+# Docker Compose Override File
+# This file allows you to override default settings for development
+# Copy this file and modify ports as needed for your environment
+
+version: '3.8'
+
+services:
+  # MySQL Database - Custom Port
+  mysql:
+    ports:
+      - "13306:3306"  # External port 13306 -> Internal port 3306
+    environment:
+      # Override database settings if needed
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: go_app_db
+      MYSQL_USER: go_app_user
+      MYSQL_PASSWORD: go_app_password
+
+  # Golang Application - Custom Port
+  app:
+    ports:
+      - "18080:8080"  # External port 18080 -> Internal port 8080
+    environment:
+      # Override server settings if needed
+      - PORT=8080
+      - HOST=0.0.0.0
+      - GIN_MODE=release
+      
+      # Database Configuration (internal Docker network)
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=go_app_user
+      - DB_PASSWORD=go_app_password
+      - DB_NAME=go_app_db
+      
+      # Redis Configuration (internal Docker network)
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      
+      # JWT Configuration
+      - JWT_SECRET=your-jwt-secret-key-change-in-production
+      - JWT_ACCESS_EXPIRY=24
+      - JWT_REFRESH_EXPIRY=168
+      
+      # Logging
+      - LOG_LEVEL=info
+      
+      # Upload Configuration
+      - UPLOAD_MAX_FILE_SIZE=10485760
+      - UPLOAD_ALLOWED_EXTS=.jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.txt,.csv
+      - UPLOAD_PATH=uploads
+      - UPLOAD_PUBLIC_URL=http://localhost:18080
+      - UPLOAD_IMAGE_MAX_SIZE=5242880
+      - UPLOAD_DOCUMENT_MAX_SIZE=20971520
+
+  # Redis - Custom Port
+  redis:
+    ports:
+      - "16379:6379"  # External port 16379 -> Internal port 6379

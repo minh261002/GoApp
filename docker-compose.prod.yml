@@ -1,0 +1,107 @@
+# Docker Compose Production Configuration
+# This file contains production-specific settings
+
+version: '3.8'
+
+services:
+  # MySQL Database - Production Ports
+  mysql:
+    ports:
+      - "3306:3306"  # Use standard MySQL port in production
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./migrations:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      timeout: 20s
+      retries: 10
+
+  # Golang Application - Production Ports
+  app:
+    ports:
+      - "80:8080"  # Use standard HTTP port in production
+    environment:
+      # Server Configuration
+      - PORT=8080
+      - HOST=0.0.0.0
+      - GIN_MODE=release
+      
+      # Database Configuration
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - DB_NAME=${MYSQL_DATABASE}
+      
+      # Redis Configuration
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=0
+      
+      # JWT Configuration
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ACCESS_EXPIRY=${JWT_ACCESS_EXPIRY}
+      - JWT_REFRESH_EXPIRY=${JWT_REFRESH_EXPIRY}
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL}
+      
+      # Upload Configuration
+      - UPLOAD_MAX_FILE_SIZE=${UPLOAD_MAX_FILE_SIZE}
+      - UPLOAD_ALLOWED_EXTS=${UPLOAD_ALLOWED_EXTS}
+      - UPLOAD_PATH=uploads
+      - UPLOAD_PUBLIC_URL=${UPLOAD_PUBLIC_URL}
+      - UPLOAD_IMAGE_MAX_SIZE=${UPLOAD_IMAGE_MAX_SIZE}
+      - UPLOAD_DOCUMENT_MAX_SIZE=${UPLOAD_DOCUMENT_MAX_SIZE}
+      
+      # Email Configuration
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - FROM_EMAIL=${FROM_EMAIL}
+      - FROM_NAME=${FROM_NAME}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      timeout: 5s
+      retries: 3
+      interval: 30s
+      start_period: 10s
+
+  # Redis - Production Ports
+  redis:
+    ports:
+      - "6379:6379"  # Use standard Redis port in production
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      timeout: 5s
+      retries: 5
+      interval: 10s
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  go_app_network:
+    driver: bridge
