@@ -31,6 +31,7 @@ func SetupRoutes(r *gin.Engine) {
 	orderHandler := handler.NewOrderHandler()
 	addressHandler := handler.NewAddressHandler()
 	reviewHandler := handler.NewReviewHandler()
+	couponHandler := handler.NewCouponHandler()
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -151,6 +152,31 @@ func SetupRoutes(r *gin.Engine) {
 			reviews.GET("/recent", reviewHandler.GetRecentReviews)
 			reviews.GET("/search", reviewHandler.SearchReviews)
 			reviews.GET("/stats", reviewHandler.GetReviewStats)
+		}
+
+		// Coupon routes (public for reading, protected for writing)
+		coupons := v1.Group("/coupons")
+		{
+			// Public routes (no authentication required)
+			coupons.GET("/active", couponHandler.GetActiveCoupons)
+			coupons.GET("/type/:type", couponHandler.GetCouponsByType)
+			coupons.GET("/search", couponHandler.SearchCoupons)
+			coupons.GET("/stats", couponHandler.GetCouponStats)
+		}
+
+		// Point routes (public for reading, protected for writing)
+		points := v1.Group("/points")
+		{
+			// Public routes (no authentication required)
+			points.GET("/user/:user_id", couponHandler.GetPointByUserID)
+			points.GET("/user/:user_id/balance", couponHandler.GetUserPointBalance)
+			points.GET("/user/:user_id/transactions", couponHandler.GetPointTransactionsByUser)
+			points.GET("/user/:user_id/history", couponHandler.GetPointHistory)
+			points.GET("/user/:user_id/expired", couponHandler.GetExpiredPoints)
+			points.GET("/user/:user_id/expiring", couponHandler.GetExpiringPoints)
+			points.GET("/user/:user_id/stats", couponHandler.GetUserPointStats)
+			points.GET("/stats", couponHandler.GetPointStats)
+			points.GET("/top-earners", couponHandler.GetTopEarners)
 		}
 
 		// Protected routes
@@ -450,6 +476,46 @@ func SetupRoutes(r *gin.Engine) {
 				reviewModeration.POST("/:review_id/moderate", middleware.ManagePermissionMiddleware(model.ResourceTypeReview), reviewHandler.ModerateReview)
 				reviewModeration.GET("/pending", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetPendingReviews)
 				reviewModeration.GET("/moderated/:moderator_id", middleware.ReadPermissionMiddleware(model.ResourceTypeReview), reviewHandler.GetModeratedReviews)
+			}
+
+			// Coupon management routes (require authentication and permissions)
+			couponManagement := protected.Group("/coupons")
+			{
+				// Coupon CRUD - requires coupon permissions
+				couponManagement.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeCoupon), couponHandler.CreateCoupon)
+				couponManagement.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeCoupon), couponHandler.GetAllCoupons)
+				couponManagement.GET("/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeCoupon), couponHandler.GetCouponByID)
+				couponManagement.GET("/code/:code", middleware.ReadPermissionMiddleware(model.ResourceTypeCoupon), couponHandler.GetCouponByCode)
+				couponManagement.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeCoupon), couponHandler.UpdateCoupon)
+				couponManagement.DELETE("/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeCoupon), couponHandler.DeleteCoupon)
+
+				// Coupon management - requires read permission
+				couponManagement.GET("/expired", middleware.ReadPermissionMiddleware(model.ResourceTypeCoupon), couponHandler.GetExpiredCoupons)
+				couponManagement.GET("/status/:status", middleware.ReadPermissionMiddleware(model.ResourceTypeCoupon), couponHandler.GetCouponsByStatus)
+
+				// Coupon usage - requires write permission
+				couponManagement.POST("/validate", middleware.ReadPermissionMiddleware(model.ResourceTypeCoupon), couponHandler.ValidateCoupon)
+				couponManagement.POST("/use", middleware.WritePermissionMiddleware(model.ResourceTypeCoupon), couponHandler.UseCoupon)
+				couponManagement.GET("/:coupon_id/usages", middleware.ReadPermissionMiddleware(model.ResourceTypeCoupon), couponHandler.GetCouponUsagesByCoupon)
+				couponManagement.GET("/:coupon_id/usage-stats", middleware.ReadPermissionMiddleware(model.ResourceTypeCoupon), couponHandler.GetCouponUsageStats)
+
+				// User coupon usages - requires read permission
+				couponManagement.GET("/user/:user_id/usages", middleware.ReadPermissionMiddleware(model.ResourceTypeCoupon), couponHandler.GetCouponUsagesByUser)
+				couponManagement.GET("/order/:order_id/usages", middleware.ReadPermissionMiddleware(model.ResourceTypeCoupon), couponHandler.GetCouponUsagesByOrder)
+			}
+
+			// Point management routes (require authentication and permissions)
+			pointManagement := protected.Group("/points")
+			{
+				// Point operations - requires point permissions
+				pointManagement.POST("/earn", middleware.WritePermissionMiddleware(model.ResourceTypePoint), couponHandler.EarnPoints)
+				pointManagement.POST("/redeem", middleware.WritePermissionMiddleware(model.ResourceTypePoint), couponHandler.RedeemPoints)
+				pointManagement.POST("/refund", middleware.WritePermissionMiddleware(model.ResourceTypePoint), couponHandler.RefundPoints)
+				pointManagement.POST("/adjust", middleware.WritePermissionMiddleware(model.ResourceTypePoint), couponHandler.AdjustPoints)
+				pointManagement.POST("/expire", middleware.WritePermissionMiddleware(model.ResourceTypePoint), couponHandler.ExpirePoints)
+
+				// Point queries - requires read permission
+				pointManagement.GET("/transaction/:id", middleware.ReadPermissionMiddleware(model.ResourceTypePoint), couponHandler.GetPointTransactionByID)
 			}
 
 			// Moderator routes (require moderator role and appropriate permissions)

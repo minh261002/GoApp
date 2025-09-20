@@ -165,6 +165,18 @@ INSERT INTO permissions (name, display_name, description, resource, action, is_s
 ('review.delete', 'Delete Reviews', 'Delete review records', 'review', 'delete', TRUE, TRUE),
 ('review.manage', 'Manage Reviews', 'Full review management and moderation', 'review', 'manage', TRUE, TRUE),
 
+-- Coupon permissions
+('coupon.read', 'Read Coupons', 'View coupon information', 'coupon', 'read', TRUE, TRUE),
+('coupon.write', 'Create/Update Coupons', 'Create and update coupons', 'coupon', 'write', TRUE, TRUE),
+('coupon.delete', 'Delete Coupons', 'Delete coupon records', 'coupon', 'delete', TRUE, TRUE),
+('coupon.manage', 'Manage Coupons', 'Full coupon management', 'coupon', 'manage', TRUE, TRUE),
+
+-- Point permissions
+('point.read', 'Read Points', 'View point information', 'point', 'read', TRUE, TRUE),
+('point.write', 'Create/Update Points', 'Create and update points', 'point', 'write', TRUE, TRUE),
+('point.delete', 'Delete Points', 'Delete point records', 'point', 'delete', TRUE, TRUE),
+('point.manage', 'Manage Points', 'Full point management', 'point', 'manage', TRUE, TRUE),
+
 -- Customer permissions
 ('customer.read', 'Read Customers', 'View customer information', 'customer', 'read', TRUE, TRUE),
 ('customer.write', 'Create/Update Customers', 'Create and update customer information', 'customer', 'write', TRUE, TRUE),

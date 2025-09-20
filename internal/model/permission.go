@@ -30,6 +30,8 @@ const (
 	ResourceTypeOrder     ResourceType = "order"
 	ResourceTypeAddress   ResourceType = "address"
 	ResourceTypeReview    ResourceType = "review"
+	ResourceTypeCoupon    ResourceType = "coupon"
+	ResourceTypePoint     ResourceType = "point"
 	ResourceTypeCustomer  ResourceType = "customer"
 	ResourceTypeReport    ResourceType = "report"
 	ResourceTypeSystem    ResourceType = "system"

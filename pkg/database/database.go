@@ -143,6 +143,10 @@ func Migrate() error {
 		&model.Review{},
 		&model.ReviewImage{},
 		&model.ReviewHelpfulVote{},
+		&model.Coupon{},
+		&model.CouponUsage{},
+		&model.Point{},
+		&model.PointTransaction{},
 		// Add more models here as needed
 	}
 
