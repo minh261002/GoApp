@@ -25,6 +25,7 @@ func SetupRoutes(r *gin.Engine) {
 	categoryHandler := handler.NewCategoryHandler()
 	productHandler := handler.NewProductHandler()
 	uploadHandler := handler.NewUploadHandler()
+	inventoryHandler := handler.NewInventoryHandler()
 	authMiddleware := middleware.NewAuthMiddleware()
 
 	// API v1 group
@@ -94,6 +95,19 @@ func SetupRoutes(r *gin.Engine) {
 			upload.GET("/stats", uploadHandler.GetUploadStats)
 		}
 
+		// Inventory routes (public for reading, protected for writing)
+		inventory := v1.Group("/inventory")
+		{
+			// Public routes (no authentication required)
+			inventory.GET("/stock-levels", inventoryHandler.GetAllStockLevels)
+			inventory.GET("/stock-levels/product/:product_id", inventoryHandler.GetStockLevelByProduct)
+			inventory.GET("/low-stock", inventoryHandler.GetLowStockProducts)
+			inventory.GET("/out-of-stock", inventoryHandler.GetOutOfStockProducts)
+			inventory.GET("/stats", inventoryHandler.GetInventoryStats)
+			inventory.GET("/alerts", inventoryHandler.GetLowStockAlerts)
+			inventory.GET("/value", inventoryHandler.GetStockValue)
+		}
+
 		// Protected routes
 		protected := v1.Group("/")
 		protected.Use(authMiddleware.AuthMiddleware())
@@ -145,6 +159,35 @@ func SetupRoutes(r *gin.Engine) {
 				uploadManagement.POST("/document", uploadHandler.UploadDocument)
 				uploadManagement.POST("/multiple", uploadHandler.UploadMultipleFiles)
 				uploadManagement.DELETE("", uploadHandler.DeleteFile)
+			}
+
+			// Inventory management routes (require authentication)
+			inventoryManagement := protected.Group("/inventory")
+			{
+				// Inventory Movements
+				inventoryManagement.POST("/movements", inventoryHandler.CreateMovement)
+				inventoryManagement.GET("/movements", inventoryHandler.GetMovements)
+				inventoryManagement.GET("/movements/:id", inventoryHandler.GetMovementByID)
+				inventoryManagement.PUT("/movements/:id", inventoryHandler.UpdateMovement)
+				inventoryManagement.DELETE("/movements/:id", inventoryHandler.DeleteMovement)
+				inventoryManagement.PATCH("/movements/:id/approve", inventoryHandler.ApproveMovement)
+				inventoryManagement.PATCH("/movements/:id/complete", inventoryHandler.CompleteMovement)
+				inventoryManagement.GET("/movements/product/:product_id", inventoryHandler.GetMovementsByProduct)
+				inventoryManagement.GET("/movements/reference/:reference", inventoryHandler.GetMovementsByReference)
+
+				// Stock Levels
+				inventoryManagement.PATCH("/stock-levels/product/:product_id/settings", inventoryHandler.UpdateStockLevelSettings)
+				inventoryManagement.POST("/stock-levels/product/:product_id/reserve", inventoryHandler.ReserveStock)
+				inventoryManagement.POST("/stock-levels/product/:product_id/release", inventoryHandler.ReleaseStock)
+
+				// Inventory Adjustments
+				inventoryManagement.POST("/adjustments", inventoryHandler.CreateAdjustment)
+				inventoryManagement.GET("/adjustments", inventoryHandler.GetAdjustments)
+				inventoryManagement.GET("/adjustments/:id", inventoryHandler.GetAdjustmentByID)
+				inventoryManagement.GET("/adjustments/product/:product_id", inventoryHandler.GetAdjustmentsByProduct)
+
+				// Reports
+				inventoryManagement.GET("/movements/stats", inventoryHandler.GetMovementStats)
 			}
 
 			// Admin routes
