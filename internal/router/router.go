@@ -23,6 +23,7 @@ func SetupRoutes(r *gin.Engine) {
 	authHandler := handler.NewAuthHandler()
 	brandHandler := handler.NewBrandHandler()
 	categoryHandler := handler.NewCategoryHandler()
+	productHandler := handler.NewProductHandler()
 	uploadHandler := handler.NewUploadHandler()
 	authMiddleware := middleware.NewAuthMiddleware()
 
@@ -69,6 +70,22 @@ func SetupRoutes(r *gin.Engine) {
 			categories.GET("/:id/ancestors", categoryHandler.GetCategoryAncestors)
 		}
 
+		// Product routes (public for reading, protected for writing)
+		products := v1.Group("/products")
+		{
+			// Public routes (no authentication required)
+			products.GET("", productHandler.GetAllProducts)
+			products.GET("/featured", productHandler.GetFeaturedProducts)
+			products.GET("/brand/:brand_id", productHandler.GetProductsByBrand)
+			products.GET("/category/:category_id", productHandler.GetProductsByCategory)
+			products.GET("/search", productHandler.SearchProducts)
+			products.GET("/low-stock", productHandler.GetLowStockProducts)
+			products.GET("/stats", productHandler.GetProductStats)
+			products.GET("/slug/:slug", productHandler.GetProductBySlug)
+			products.GET("/sku/:sku", productHandler.GetProductBySKU)
+			products.GET("/:id", productHandler.GetProductByID)
+		}
+
 		// Upload routes (public for reading, protected for writing)
 		upload := v1.Group("/upload")
 		{
@@ -106,6 +123,17 @@ func SetupRoutes(r *gin.Engine) {
 				categoryManagement.DELETE("/:id", categoryHandler.DeleteCategory)
 				categoryManagement.PATCH("/:id/status", categoryHandler.UpdateCategoryStatus)
 				categoryManagement.PATCH("/bulk-status", categoryHandler.BulkUpdateCategoryStatus)
+			}
+
+			// Product management routes (require authentication)
+			productManagement := protected.Group("/products")
+			{
+				productManagement.POST("", productHandler.CreateProduct)
+				productManagement.PUT("/:id", productHandler.UpdateProduct)
+				productManagement.DELETE("/:id", productHandler.DeleteProduct)
+				productManagement.PATCH("/:id/stock", productHandler.UpdateProductStock)
+				productManagement.PATCH("/:id/status", productHandler.UpdateProductStatus)
+				productManagement.PATCH("/bulk-status", productHandler.BulkUpdateProductStatus)
 			}
 
 			// Upload management routes (require authentication)
