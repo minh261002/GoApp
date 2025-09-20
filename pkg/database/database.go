@@ -122,6 +122,9 @@ func Migrate() error {
 		&model.OTP{},
 		&model.Brand{},
 		&model.Category{},
+		&model.Product{},
+		&model.ProductVariant{},
+		&model.ProductAttribute{},
 		// Add more models here as needed
 	}
 
