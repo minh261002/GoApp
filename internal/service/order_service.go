@@ -74,6 +74,7 @@ type orderService struct {
 	productRepo   *repository.ProductRepository
 	inventoryRepo repository.InventoryRepository
 	userRepo      repository.UserRepository
+	eventService  EventService
 }
 
 // NewOrderService creates a new OrderService
@@ -83,6 +84,18 @@ func NewOrderService() OrderService {
 		productRepo:   repository.NewProductRepository(),
 		inventoryRepo: repository.NewInventoryRepository(),
 		userRepo:      repository.NewUserRepository(),
+		eventService:  nil, // Will be set by dependency injection
+	}
+}
+
+// NewOrderServiceWithEvent creates a new OrderService with EventService
+func NewOrderServiceWithEvent(eventService EventService) OrderService {
+	return &orderService{
+		orderRepo:     repository.NewOrderRepository(),
+		productRepo:   repository.NewProductRepository(),
+		inventoryRepo: repository.NewInventoryRepository(),
+		userRepo:      repository.NewUserRepository(),
+		eventService:  eventService,
 	}
 }
 
@@ -223,6 +236,14 @@ func (s *orderService) CreateOrder(req *model.OrderCreateRequest, userID uint) (
 		return nil, fmt.Errorf("failed to retrieve created order")
 	}
 
+	// Trigger order created event
+	if s.eventService != nil {
+		if err := s.eventService.OnOrderCreated(createdOrder); err != nil {
+			logger.Errorf("Failed to trigger order created event: %v", err)
+			// Don't return error, just log it
+		}
+	}
+
 	return s.toOrderResponse(createdOrder), nil
 }
 
@@ -298,6 +319,9 @@ func (s *orderService) UpdateOrder(id uint, req *model.OrderUpdateRequest, userI
 		return nil, errors.New("cannot update completed or cancelled order")
 	}
 
+	// Store old status for event trigger
+	oldStatus := order.Status
+
 	// Update fields
 	if req.Status != nil {
 		order.Status = *req.Status
@@ -363,6 +387,14 @@ func (s *orderService) UpdateOrder(id uint, req *model.OrderUpdateRequest, userI
 	if err != nil {
 		logger.Errorf("Error getting updated order: %v", err)
 		return nil, fmt.Errorf("failed to retrieve updated order")
+	}
+
+	// Trigger order status updated event if status changed
+	if s.eventService != nil && req.Status != nil && *req.Status != oldStatus {
+		if err := s.eventService.OnOrderStatusUpdated(updatedOrder, oldStatus, *req.Status); err != nil {
+			logger.Errorf("Failed to trigger order status updated event: %v", err)
+			// Don't return error, just log it
+		}
 	}
 
 	return s.toOrderResponse(updatedOrder), nil

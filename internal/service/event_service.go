@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+// NotificationServiceInterface defines the interface for notification service
+type NotificationServiceInterface interface {
+	CreateNotification(req *model.CreateNotificationRequest) (*model.NotificationResponse, error)
+}
+
 // EventService handles business events and triggers notifications
 type EventService interface {
 	// Order events
@@ -44,18 +49,27 @@ type EventService interface {
 
 // eventService implements EventService
 type eventService struct {
-	notificationService NotificationService
+	notificationService interface{} // NotificationService interface
 	userService         interface{} // Placeholder for UserService
 	productService      interface{} // Placeholder for ProductService
 }
 
 // NewEventService creates a new EventService
-func NewEventService(notificationService NotificationService, userService interface{}, productService interface{}) EventService {
+func NewEventService(notificationService interface{}, userService interface{}, productService interface{}) EventService {
 	return &eventService{
 		notificationService: notificationService,
 		userService:         userService,
 		productService:      productService,
 	}
+}
+
+// sendNotification is a helper method to send notifications
+func (s *eventService) sendNotification(notification *model.CreateNotificationRequest) error {
+	if notifService, ok := s.notificationService.(NotificationServiceInterface); ok {
+		_, err := notifService.CreateNotification(notification)
+		return err
+	}
+	return nil
 }
 
 // Order events
@@ -82,7 +96,7 @@ func (s *eventService) OnOrderCreated(order *model.Order) error {
 	}
 
 	// Send email notification
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create order confirmation notification: %v", err)
 		return err
 	}
@@ -92,7 +106,7 @@ func (s *eventService) OnOrderCreated(order *model.Order) error {
 	notification.Title = "Order Placed"
 	notification.Message = fmt.Sprintf("Your order #%s has been placed successfully", order.OrderNumber)
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create in-app order notification: %v", err)
 	}
 
@@ -161,7 +175,7 @@ func (s *eventService) OnOrderStatusUpdated(order *model.Order, oldStatus, newSt
 		ActionURL: fmt.Sprintf("/orders/%d", order.ID),
 	}
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create order status notification: %v", err)
 		return err
 	}
@@ -169,7 +183,7 @@ func (s *eventService) OnOrderStatusUpdated(order *model.Order, oldStatus, newSt
 	// Also send in-app notification for important status changes
 	if newStatus == model.OrderStatusShipped || newStatus == model.OrderStatusDelivered || newStatus == model.OrderStatusCancelled {
 		notification.Channel = model.NotificationChannelInApp
-		if _, err := s.notificationService.CreateNotification(notification); err != nil {
+		if err := s.sendNotification(notification); err != nil {
 			logger.Errorf("Failed to create in-app order status notification: %v", err)
 		}
 	}
@@ -197,7 +211,7 @@ func (s *eventService) OnOrderShipped(order *model.Order, trackingNumber string)
 		ActionURL: fmt.Sprintf("/orders/%d/tracking", order.ID),
 	}
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create order shipped notification: %v", err)
 		return err
 	}
@@ -206,7 +220,7 @@ func (s *eventService) OnOrderShipped(order *model.Order, trackingNumber string)
 	notification.Channel = model.NotificationChannelSMS
 	notification.Message = fmt.Sprintf("Your order #%s has been shipped! Track: %s", order.OrderNumber, trackingNumber)
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create SMS shipping notification: %v", err)
 	}
 
@@ -232,7 +246,7 @@ func (s *eventService) OnOrderDelivered(order *model.Order) error {
 		ActionURL: fmt.Sprintf("/orders/%d", order.ID),
 	}
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create order delivered notification: %v", err)
 		return err
 	}
@@ -242,7 +256,7 @@ func (s *eventService) OnOrderDelivered(order *model.Order) error {
 	notification.Title = "Order Delivered"
 	notification.Message = fmt.Sprintf("Your order #%s has been delivered!", order.OrderNumber)
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create in-app delivery notification: %v", err)
 	}
 
@@ -269,7 +283,7 @@ func (s *eventService) OnOrderCancelled(order *model.Order, reason string) error
 		ActionURL: fmt.Sprintf("/orders/%d", order.ID),
 	}
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create order cancelled notification: %v", err)
 		return err
 	}
@@ -300,7 +314,7 @@ func (s *eventService) OnPaymentSuccess(order *model.Order, payment *model.Payme
 		ActionURL: fmt.Sprintf("/orders/%d", order.ID),
 	}
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create payment success notification: %v", err)
 		return err
 	}
@@ -330,7 +344,7 @@ func (s *eventService) OnPaymentFailed(order *model.Order, payment *model.Paymen
 		ActionURL: fmt.Sprintf("/orders/%d/payment", order.ID),
 	}
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create payment failed notification: %v", err)
 		return err
 	}
@@ -442,7 +456,7 @@ func (s *eventService) OnReviewApproved(review *model.Review) error {
 		ActionURL: fmt.Sprintf("/products/%d", review.ProductID),
 	}
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create review approved notification: %v", err)
 		return err
 	}
@@ -474,7 +488,7 @@ func (s *eventService) OnWishlistItemOnSale(wishlistItem *model.WishlistItem, ol
 		ActionURL: fmt.Sprintf("/products/%d", wishlistItem.ProductID),
 	}
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create wishlist sale notification: %v", err)
 		return err
 	}
@@ -561,7 +575,7 @@ func (s *eventService) OnPointsEarned(userID uint, points int64, source string) 
 		ActionURL: "/points",
 	}
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create points earned notification: %v", err)
 		return err
 	}
@@ -587,7 +601,7 @@ func (s *eventService) OnPointsExpiring(userID uint, points int64, expiryDate ti
 		ActionURL: "/points",
 	}
 
-	if _, err := s.notificationService.CreateNotification(notification); err != nil {
+	if err := s.sendNotification(notification); err != nil {
 		logger.Errorf("Failed to create points expiring notification: %v", err)
 		return err
 	}

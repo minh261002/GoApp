@@ -78,8 +78,12 @@ func SetupRoutes(r *gin.Engine) {
 	rateLimitService := service.NewRateLimitService(rateLimitRepo, nil) // TODO: Pass Redis client
 	rateLimitHandler := handler.NewRateLimitHandler(rateLimitService)
 
-	// Initialize order service
-	orderService := service.NewOrderService()
+	// Initialize event service
+	eventService := service.NewEventService(notificationService, nil, nil)
+	eventHandler := handler.NewEventHandler(eventService)
+
+	// Initialize order service with event service
+	orderService := service.NewOrderServiceWithEvent(eventService)
 
 	// Initialize cart handler (using order service)
 	cartHandler := handler.NewCartHandler(orderService)
@@ -945,6 +949,61 @@ func SetupRoutes(r *gin.Engine) {
 			{
 				shippingStats.GET("", shippingHandler.GetShippingStats)
 				shippingStats.GET("/provider/:provider_id", shippingHandler.GetShippingStatsByProvider)
+			}
+		}
+
+		// Event Management routes (require authentication)
+		eventManagement := protected.Group("/events")
+		eventManagement.Use(middleware.WritePermissionMiddleware(model.ResourceTypeSystem))
+		{
+			// Order events
+			orderEvents := eventManagement.Group("/order")
+			{
+				orderEvents.POST("/created", eventHandler.TriggerOrderCreated)
+				orderEvents.POST("/status-updated", eventHandler.TriggerOrderStatusUpdated)
+				orderEvents.POST("/shipped", eventHandler.TriggerOrderShipped)
+				orderEvents.POST("/delivered", eventHandler.TriggerOrderDelivered)
+				orderEvents.POST("/cancelled", eventHandler.TriggerOrderCancelled)
+			}
+
+			// Payment events
+			paymentEvents := eventManagement.Group("/payment")
+			{
+				paymentEvents.POST("/success", eventHandler.TriggerPaymentSuccess)
+				paymentEvents.POST("/failed", eventHandler.TriggerPaymentFailed)
+			}
+
+			// Product events
+			productEvents := eventManagement.Group("/product")
+			{
+				productEvents.POST("/back-in-stock", eventHandler.TriggerProductBackInStock)
+				productEvents.POST("/price-drop", eventHandler.TriggerPriceDrop)
+			}
+
+			// Review events
+			reviewEvents := eventManagement.Group("/review")
+			{
+				reviewEvents.POST("/created", eventHandler.TriggerReviewCreated)
+				reviewEvents.POST("/approved", eventHandler.TriggerReviewApproved)
+			}
+
+			// Inventory events
+			inventoryEvents := eventManagement.Group("/inventory")
+			{
+				inventoryEvents.POST("/low-stock", eventHandler.TriggerLowStockAlert)
+			}
+
+			// Coupon events
+			couponEvents := eventManagement.Group("/coupon")
+			{
+				couponEvents.POST("/expiring", eventHandler.TriggerCouponExpiring)
+			}
+
+			// Point events
+			pointEvents := eventManagement.Group("/points")
+			{
+				pointEvents.POST("/earned", eventHandler.TriggerPointsEarned)
+				pointEvents.POST("/expiring", eventHandler.TriggerPointsExpiring)
 			}
 		}
 
