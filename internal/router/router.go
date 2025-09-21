@@ -83,6 +83,11 @@ func SetupRoutes(r *gin.Engine) {
 	analyticsService := service.NewAnalyticsService(analyticsRepo, repository.NewUserRepository())
 	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
 
+	// Initialize audit service
+	auditRepo := repository.NewAuditRepository(database.GetDB())
+	auditService := service.NewAuditService(auditRepo, repository.NewUserRepository())
+	auditHandler := handler.NewAuditHandler(auditService)
+
 	// Initialize event service
 	eventService := service.NewEventService(notificationService, nil, nil)
 	eventHandler := handler.NewEventHandler(eventService)
@@ -954,6 +959,56 @@ func SetupRoutes(r *gin.Engine) {
 			{
 				shippingStats.GET("", shippingHandler.GetShippingStats)
 				shippingStats.GET("/provider/:provider_id", shippingHandler.GetShippingStatsByProvider)
+			}
+		}
+
+		// Audit Management routes (require authentication)
+		auditManagement := protected.Group("/audit")
+		auditManagement.Use(middleware.ReadPermissionMiddleware(model.ResourceTypeAudit))
+		{
+			// Audit Logs
+			logs := auditManagement.Group("/logs")
+			{
+				logs.POST("", auditHandler.CreateAuditLog)
+				logs.GET("", auditHandler.GetAllAuditLogs)
+				logs.GET("/search", auditHandler.SearchAuditLogs)
+				logs.GET("/user/:user_id", auditHandler.GetAuditLogsByUser)
+				logs.GET("/resource/:resource/:resource_id", auditHandler.GetAuditLogsByResource)
+				logs.GET("/:id", auditHandler.GetAuditLogByID)
+				logs.PUT("/:id", auditHandler.UpdateAuditLog)
+				logs.DELETE("/:id", auditHandler.DeleteAuditLog)
+			}
+
+			// Audit Configs
+			configs := auditManagement.Group("/configs")
+			{
+				configs.POST("", auditHandler.CreateAuditConfig)
+				configs.GET("", auditHandler.GetAllAuditConfigs)
+				configs.GET("/name/:name", auditHandler.GetAuditConfigByName)
+				configs.GET("/:id", auditHandler.GetAuditConfigByID)
+				configs.PUT("/:id", auditHandler.UpdateAuditConfig)
+				configs.DELETE("/:id", auditHandler.DeleteAuditConfig)
+			}
+
+			// Statistics
+			stats := auditManagement.Group("/stats")
+			{
+				stats.GET("", auditHandler.GetAuditStats)
+				stats.GET("/activity", auditHandler.GetRecentActivity)
+			}
+
+			// Export
+			export := auditManagement.Group("/export")
+			{
+				export.POST("", auditHandler.ExportAuditLogs)
+			}
+
+			// Cleanup
+			cleanup := auditManagement.Group("/cleanup")
+			{
+				cleanup.POST("/logs", auditHandler.CleanupOldLogs)
+				cleanup.POST("/summaries", auditHandler.CleanupOldSummaries)
+				cleanup.POST("/optimize", auditHandler.OptimizeAuditTables)
 			}
 		}
 

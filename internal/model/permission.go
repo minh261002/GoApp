@@ -40,6 +40,7 @@ const (
 	ResourceTypeCustomer     ResourceType = "customer"
 	ResourceTypeReport       ResourceType = "report"
 	ResourceTypeSystem       ResourceType = "system"
+	ResourceTypeAudit        ResourceType = "audit"
 )
 
 // Permission represents a permission in the system
@@ -141,7 +142,7 @@ type PermissionCreateRequest struct {
 	Name        string         `json:"name" binding:"required,min=3,max=100"`
 	DisplayName string         `json:"display_name" binding:"required,min=3,max=255"`
 	Description string         `json:"description"`
-	Resource    ResourceType   `json:"resource" binding:"required,oneof=user brand category product inventory upload order customer report system"`
+	Resource    ResourceType   `json:"resource" binding:"required,oneof=user brand category product inventory upload order customer report system audit"`
 	Action      PermissionType `json:"action" binding:"required,oneof=read write delete manage admin"`
 }
 
