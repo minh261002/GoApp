@@ -590,6 +590,48 @@ func SetupRoutes(r *gin.Engine) {
 				paymentManagement.POST("/cancel/:order_code", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), paymentHandler.CancelPayment)
 			}
 
+			// Order Tracking routes (require authentication and permissions)
+			orderTrackingHandler := handler.NewOrderTrackingHandler()
+			orderTracking := protected.Group("/order-tracking")
+			{
+				// Order Tracking CRUD - requires order write permission
+				orderTracking.POST("", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderTrackingHandler.CreateOrderTracking)
+				orderTracking.GET("", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderTrackingHandler.GetAllOrderTrackings)
+				orderTracking.GET("/:id", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderTrackingHandler.GetOrderTrackingByID)
+				orderTracking.PUT("/:id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderTrackingHandler.UpdateOrderTracking)
+				orderTracking.DELETE("/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeOrder), orderTrackingHandler.DeleteOrderTracking)
+
+				// Tracking Events - requires read permission
+				orderTracking.GET("/:id/events", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderTrackingHandler.GetTrackingEvents)
+
+				// Sync - requires write permission
+				orderTracking.POST("/sync", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderTrackingHandler.SyncOrderTrackings)
+
+				// Statistics - requires read permission
+				orderTracking.GET("/stats", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderTrackingHandler.GetOrderTrackingStats)
+			}
+
+			// Order Tracking Public routes (no authentication required)
+			orderTrackingPublic := v1.Group("/order-tracking")
+			{
+				// Public tracking by tracking number
+				orderTrackingPublic.GET("/track/:tracking_number", orderTrackingHandler.GetOrderTrackingByTrackingNumber)
+			}
+
+			// Order Tracking Webhook routes (no authentication required)
+			orderTrackingWebhook := v1.Group("/order-tracking/webhook")
+			{
+				// Webhook processing - no authentication required
+				orderTrackingWebhook.POST("/:carrier/:carrier_code", orderTrackingHandler.ProcessWebhook)
+			}
+
+			// Order routes with tracking
+			ordersWithTracking := protected.Group("/orders")
+			{
+				// Get tracking for specific order - requires read permission
+				ordersWithTracking.GET("/:order_id/tracking", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), orderTrackingHandler.GetOrderTrackingByOrderID)
+			}
+
 			// Address management routes (require authentication and permissions)
 			addressManagement := protected.Group("/addresses")
 			{

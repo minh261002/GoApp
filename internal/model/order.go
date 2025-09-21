@@ -196,18 +196,18 @@ type CartItem struct {
 
 // CartShare represents a shared cart
 type CartShare struct {
-	ID        uint   `json:"id" gorm:"primaryKey"`
-	CartID    uint   `json:"cart_id" gorm:"not null;index"`
-	Cart      *Cart  `json:"cart,omitempty" gorm:"foreignKey:CartID"`
-	SharedBy  uint   `json:"shared_by" gorm:"not null"`
+	ID           uint  `json:"id" gorm:"primaryKey"`
+	CartID       uint  `json:"cart_id" gorm:"not null;index"`
+	Cart         *Cart `json:"cart,omitempty" gorm:"foreignKey:CartID"`
+	SharedBy     uint  `json:"shared_by" gorm:"not null"`
 	SharedByUser *User `json:"shared_by_user,omitempty" gorm:"foreignKey:SharedBy"`
 
 	// Share Information
-	Token      string    `json:"token" gorm:"size:255;uniqueIndex"`
-	IsActive   bool      `json:"is_active" gorm:"default:true"`
-	ExpiresAt  time.Time `json:"expires_at"`
-	MaxUses    int       `json:"max_uses" gorm:"default:0"` // 0 = unlimited
-	UsedCount  int       `json:"used_count" gorm:"default:0"`
+	Token     string    `json:"token" gorm:"size:255;uniqueIndex"`
+	IsActive  bool      `json:"is_active" gorm:"default:true"`
+	ExpiresAt time.Time `json:"expires_at"`
+	MaxUses   int       `json:"max_uses" gorm:"default:0"` // 0 = unlimited
+	UsedCount int       `json:"used_count" gorm:"default:0"`
 
 	// Permissions
 	CanView   bool `json:"can_view" gorm:"default:true"`
@@ -225,12 +225,12 @@ type CartShare struct {
 
 // SavedForLater represents items saved for later purchase
 type SavedForLater struct {
-	ID        uint   `json:"id" gorm:"primaryKey"`
-	UserID    uint   `json:"user_id" gorm:"not null;index"`
-	User      *User  `json:"user,omitempty" gorm:"foreignKey:UserID"`
-	ProductID uint   `json:"product_id" gorm:"not null;index"`
-	Product   *Product `json:"product,omitempty" gorm:"foreignKey:ProductID"`
-	ProductVariantID *uint `json:"product_variant_id" gorm:"index"`
+	ID               uint            `json:"id" gorm:"primaryKey"`
+	UserID           uint            `json:"user_id" gorm:"not null;index"`
+	User             *User           `json:"user,omitempty" gorm:"foreignKey:UserID"`
+	ProductID        uint            `json:"product_id" gorm:"not null;index"`
+	Product          *Product        `json:"product,omitempty" gorm:"foreignKey:ProductID"`
+	ProductVariantID *uint           `json:"product_variant_id" gorm:"index"`
 	ProductVariant   *ProductVariant `json:"product_variant,omitempty" gorm:"foreignKey:ProductVariantID"`
 
 	// Item Information
@@ -239,9 +239,9 @@ type SavedForLater struct {
 	TotalPrice float64 `json:"total_price" gorm:"type:decimal(10,2);not null"`
 
 	// Additional Information
-	Notes     string `json:"notes" gorm:"type:text"`
-	Priority  int    `json:"priority" gorm:"default:0"`
-	RemindAt  *time.Time `json:"remind_at"` // Reminder date
+	Notes    string     `json:"notes" gorm:"type:text"`
+	Priority int        `json:"priority" gorm:"default:0"`
+	RemindAt *time.Time `json:"remind_at"` // Reminder date
 
 	// Notifications
 	NotifyOnPriceDrop bool `json:"notify_on_price_drop" gorm:"default:true"`
@@ -714,14 +714,14 @@ type CartShareCreateRequest struct {
 
 // CartShareUpdateRequest represents the request to update a cart share
 type CartShareUpdateRequest struct {
-	IsActive          *bool     `json:"is_active"`
+	IsActive          *bool      `json:"is_active"`
 	ExpiresAt         *time.Time `json:"expires_at"`
-	MaxUses           *int      `json:"max_uses" binding:"omitempty,min=0"`
-	CanView           *bool     `json:"can_view"`
-	CanEdit           *bool     `json:"can_edit"`
-	CanDelete         *bool     `json:"can_delete"`
-	PasswordProtected *bool     `json:"password_protected"`
-	Password          string    `json:"password" binding:"omitempty,min=6,max=50"`
+	MaxUses           *int       `json:"max_uses" binding:"omitempty,min=0"`
+	CanView           *bool      `json:"can_view"`
+	CanEdit           *bool      `json:"can_edit"`
+	CanDelete         *bool      `json:"can_delete"`
+	PasswordProtected *bool      `json:"password_protected"`
+	Password          string     `json:"password" binding:"omitempty,min=6,max=50"`
 }
 
 // CartShareResponse represents the response for cart share
@@ -745,71 +745,70 @@ type CartShareResponse struct {
 
 // SavedForLaterCreateRequest represents the request to save item for later
 type SavedForLaterCreateRequest struct {
-	ProductID        uint       `json:"product_id" binding:"required"`
-	ProductVariantID *uint      `json:"product_variant_id"`
-	Quantity         int        `json:"quantity" binding:"required,min=1"`
-	Notes            string     `json:"notes"`
-	Priority         int        `json:"priority"`
-	RemindAt         *time.Time `json:"remind_at"`
-	NotifyOnPriceDrop bool      `json:"notify_on_price_drop"`
-	NotifyOnStock     bool      `json:"notify_on_stock"`
-	NotifyOnSale      bool      `json:"notify_on_sale"`
+	ProductID         uint       `json:"product_id" binding:"required"`
+	ProductVariantID  *uint      `json:"product_variant_id"`
+	Quantity          int        `json:"quantity" binding:"required,min=1"`
+	Notes             string     `json:"notes"`
+	Priority          int        `json:"priority"`
+	RemindAt          *time.Time `json:"remind_at"`
+	NotifyOnPriceDrop bool       `json:"notify_on_price_drop"`
+	NotifyOnStock     bool       `json:"notify_on_stock"`
+	NotifyOnSale      bool       `json:"notify_on_sale"`
 }
 
 // SavedForLaterUpdateRequest represents the request to update saved item
 type SavedForLaterUpdateRequest struct {
-	Quantity         *int       `json:"quantity" binding:"omitempty,min=1"`
-	Notes            string     `json:"notes"`
-	Priority         *int       `json:"priority"`
-	RemindAt         *time.Time `json:"remind_at"`
-	NotifyOnPriceDrop *bool     `json:"notify_on_price_drop"`
-	NotifyOnStock     *bool     `json:"notify_on_sale"`
-	NotifyOnSale      *bool     `json:"notify_on_sale"`
+	Quantity          *int       `json:"quantity" binding:"omitempty,min=1"`
+	Notes             string     `json:"notes"`
+	Priority          *int       `json:"priority"`
+	RemindAt          *time.Time `json:"remind_at"`
+	NotifyOnPriceDrop *bool      `json:"notify_on_price_drop"`
+	NotifyOnStock     *bool      `json:"notify_on_sale"`
+	NotifyOnSale      *bool      `json:"notify_on_sale"`
 }
 
 // SavedForLaterResponse represents the response for saved item
 type SavedForLaterResponse struct {
-	ID               uint            `json:"id"`
-	UserID           uint            `json:"user_id"`
-	ProductID        uint            `json:"product_id"`
-	Product          *ProductResponse `json:"product,omitempty"`
-	ProductVariantID *uint           `json:"product_variant_id"`
-	ProductVariant   *ProductVariantResponse `json:"product_variant,omitempty"`
-	Quantity         int             `json:"quantity"`
-	UnitPrice        float64         `json:"unit_price"`
-	TotalPrice       float64         `json:"total_price"`
-	Notes            string          `json:"notes"`
-	Priority         int             `json:"priority"`
-	RemindAt         *time.Time      `json:"remind_at"`
-	NotifyOnPriceDrop bool           `json:"notify_on_price_drop"`
-	NotifyOnStock     bool           `json:"notify_on_stock"`
-	NotifyOnSale      bool           `json:"notify_on_sale"`
-	CreatedAt        time.Time       `json:"created_at"`
-	UpdatedAt        time.Time       `json:"updated_at"`
+	ID                uint                    `json:"id"`
+	UserID            uint                    `json:"user_id"`
+	ProductID         uint                    `json:"product_id"`
+	Product           *ProductResponse        `json:"product,omitempty"`
+	ProductVariantID  *uint                   `json:"product_variant_id"`
+	ProductVariant    *ProductVariantResponse `json:"product_variant,omitempty"`
+	Quantity          int                     `json:"quantity"`
+	UnitPrice         float64                 `json:"unit_price"`
+	TotalPrice        float64                 `json:"total_price"`
+	Notes             string                  `json:"notes"`
+	Priority          int                     `json:"priority"`
+	RemindAt          *time.Time              `json:"remind_at"`
+	NotifyOnPriceDrop bool                    `json:"notify_on_price_drop"`
+	NotifyOnStock     bool                    `json:"notify_on_stock"`
+	NotifyOnSale      bool                    `json:"notify_on_sale"`
+	CreatedAt         time.Time               `json:"created_at"`
+	UpdatedAt         time.Time               `json:"updated_at"`
 }
 
 // CartBulkActionRequest represents the request for bulk cart actions
 type CartBulkActionRequest struct {
-	Action    string `json:"action" binding:"required,oneof=move_to_saved move_to_cart update_quantity remove"`
-	ItemIDs   []uint `json:"item_ids" binding:"required,min=1"`
-	Quantity  *int   `json:"quantity" binding:"omitempty,min=1"`
-	Notes     string `json:"notes"`
-	Priority  *int   `json:"priority"`
+	Action   string `json:"action" binding:"required,oneof=move_to_saved move_to_cart update_quantity remove"`
+	ItemIDs  []uint `json:"item_ids" binding:"required,min=1"`
+	Quantity *int   `json:"quantity" binding:"omitempty,min=1"`
+	Notes    string `json:"notes"`
+	Priority *int   `json:"priority"`
 }
 
 // CartBulkActionResponse represents the response for bulk cart actions
 type CartBulkActionResponse struct {
-	SuccessCount int      `json:"success_count"`
-	FailedCount  int      `json:"failed_count"`
-	FailedItems  []uint   `json:"failed_items"`
-	Message      string   `json:"message"`
+	SuccessCount int    `json:"success_count"`
+	FailedCount  int    `json:"failed_count"`
+	FailedItems  []uint `json:"failed_items"`
+	Message      string `json:"message"`
 }
 
 // CartItemUpdateRequest represents the request to update cart item
 type CartItemUpdateRequest struct {
-	Quantity         *int    `json:"quantity" binding:"omitempty,min=1"`
-	Notes            string  `json:"notes"`
-	Priority         *int    `json:"priority"`
-	IsSavedForLater  *bool   `json:"is_saved_for_later"`
+	Quantity        *int   `json:"quantity" binding:"omitempty,min=1"`
+	Notes           string `json:"notes"`
+	Priority        *int   `json:"priority"`
+	IsSavedForLater *bool  `json:"is_saved_for_later"`
 }
-
