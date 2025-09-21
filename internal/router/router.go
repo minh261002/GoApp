@@ -545,6 +545,28 @@ func SetupRoutes(r *gin.Engine) {
 				cartManagement.POST("/:id/convert-to-order", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), orderHandler.ConvertCartToOrder)
 			}
 
+			// Advanced Cart Features routes (require authentication)
+			cartAdvancedHandler := handler.NewCartAdvancedHandler()
+			cartAdvanced := protected.Group("/carts")
+			{
+				// Cart Sharing - requires order write permission
+				cartAdvanced.POST("/shares", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.CreateCartShare)
+				cartAdvanced.GET("/shares/:token", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.GetCartShareByToken)
+				cartAdvanced.GET("/:cart_id/shares", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.GetCartSharesByCartID)
+				cartAdvanced.PUT("/shares/:id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.UpdateCartShare)
+				cartAdvanced.DELETE("/shares/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.DeleteCartShare)
+
+				// Saved for Later - requires order write permission
+				cartAdvanced.POST("/saved-for-later", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.SaveItemForLater)
+				cartAdvanced.GET("/saved-for-later", middleware.ReadPermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.GetSavedForLaterByUser)
+				cartAdvanced.PUT("/saved-for-later/:id", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.UpdateSavedForLater)
+				cartAdvanced.DELETE("/saved-for-later/:id", middleware.DeletePermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.DeleteSavedForLater)
+				cartAdvanced.POST("/saved-for-later/:id/move-to-cart", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.MoveToCart)
+
+				// Bulk Actions - requires order write permission
+				cartAdvanced.POST("/bulk-action", middleware.WritePermissionMiddleware(model.ResourceTypeOrder), cartAdvancedHandler.BulkCartAction)
+			}
+
 			// Cart statistics routes (require read permission)
 			cartStats := protected.Group("/carts")
 			cartStats.Use(authMiddleware.AdminMiddleware())
