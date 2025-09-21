@@ -625,3 +625,327 @@ func (s *ProductService) convertToResponse(product *model.Product) model.Product
 
 	return response
 }
+
+// ===== PRODUCT VARIANTS SERVICE METHODS =====
+
+// GetProductVariants gets all variants for a product
+func (s *ProductService) GetProductVariants(productID uint) ([]model.ProductVariantResponse, error) {
+	// Check if product exists
+	_, err := s.productRepo.GetByID(productID)
+	if err != nil {
+		return nil, fmt.Errorf("product not found")
+	}
+
+	variants, err := s.productVariantRepo.GetByProductID(productID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get product variants: %w", err)
+	}
+
+	responses := make([]model.ProductVariantResponse, len(variants))
+	for i, variant := range variants {
+		responses[i] = s.convertVariantToResponse(&variant)
+	}
+
+	return responses, nil
+}
+
+// GetProductVariant gets a specific product variant
+func (s *ProductService) GetProductVariant(productID, variantID uint) (*model.ProductVariantResponse, error) {
+	// Check if product exists
+	_, err := s.productRepo.GetByID(productID)
+	if err != nil {
+		return nil, fmt.Errorf("product not found")
+	}
+
+	variant, err := s.productVariantRepo.GetByID(variantID)
+	if err != nil {
+		return nil, fmt.Errorf("product variant not found")
+	}
+
+	// Verify variant belongs to product
+	if variant.ProductID != productID {
+		return nil, fmt.Errorf("product variant not found")
+	}
+
+	response := s.convertVariantToResponse(variant)
+	return &response, nil
+}
+
+// CreateProductVariant creates a new product variant
+func (s *ProductService) CreateProductVariant(productID uint, req *model.ProductVariantCreateRequest) (*model.ProductVariantResponse, error) {
+	// Check if product exists
+	product, err := s.productRepo.GetByID(productID)
+	if err != nil {
+		return nil, fmt.Errorf("product not found")
+	}
+
+	// Check if product is variable type
+	if product.Type != model.ProductTypeVariable {
+		return nil, fmt.Errorf("product must be variable type to add variants")
+	}
+
+	// Check if variant SKU exists
+	if req.SKU != "" {
+		exists, err := s.productVariantRepo.ExistsBySKU(req.SKU)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check variant SKU: %w", err)
+		}
+		if exists {
+			return nil, fmt.Errorf("variant with SKU '%s' already exists", req.SKU)
+		}
+	}
+
+	// Set default values
+	manageStock := true
+	if req.ManageStock != nil {
+		manageStock = *req.ManageStock
+	}
+
+	isActive := true
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+
+	// Convert attributes to JSON
+	attributesJSON := ""
+	if len(req.Attributes) > 0 {
+		attrsJSON, err := json.Marshal(req.Attributes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal variant attributes: %w", err)
+		}
+		attributesJSON = string(attrsJSON)
+	}
+
+	variant := &model.ProductVariant{
+		ProductID:     productID,
+		Name:          strings.TrimSpace(req.Name),
+		SKU:           strings.TrimSpace(req.SKU),
+		Description:   strings.TrimSpace(req.Description),
+		RegularPrice:  req.RegularPrice,
+		SalePrice:     req.SalePrice,
+		CostPrice:     req.CostPrice,
+		StockQuantity: req.StockQuantity,
+		StockStatus:   req.StockStatus,
+		ManageStock:   manageStock,
+		Image:         strings.TrimSpace(req.Image),
+		Attributes:    attributesJSON,
+		IsActive:      isActive,
+		SortOrder:     req.SortOrder,
+	}
+
+	if err := s.productVariantRepo.Create(variant); err != nil {
+		return nil, fmt.Errorf("failed to create product variant: %w", err)
+	}
+
+	response := s.convertVariantToResponse(variant)
+	return &response, nil
+}
+
+// UpdateProductVariant updates a product variant
+func (s *ProductService) UpdateProductVariant(productID, variantID uint, req *model.ProductVariantUpdateRequest) (*model.ProductVariantResponse, error) {
+	// Check if product exists
+	_, err := s.productRepo.GetByID(productID)
+	if err != nil {
+		return nil, fmt.Errorf("product not found")
+	}
+
+	// Get existing variant
+	variant, err := s.productVariantRepo.GetByID(variantID)
+	if err != nil {
+		return nil, fmt.Errorf("product variant not found")
+	}
+
+	// Verify variant belongs to product
+	if variant.ProductID != productID {
+		return nil, fmt.Errorf("product variant not found")
+	}
+
+	// Check if variant SKU exists (if changing SKU)
+	if req.SKU != "" && req.SKU != variant.SKU {
+		exists, err := s.productVariantRepo.ExistsBySKU(req.SKU)
+		if err != nil {
+			return nil, fmt.Errorf("failed to check variant SKU: %w", err)
+		}
+		if exists {
+			return nil, fmt.Errorf("variant with SKU '%s' already exists", req.SKU)
+		}
+	}
+
+	// Update fields
+	if req.Name != "" {
+		variant.Name = strings.TrimSpace(req.Name)
+	}
+	if req.SKU != "" {
+		variant.SKU = strings.TrimSpace(req.SKU)
+	}
+	if req.Description != "" {
+		variant.Description = strings.TrimSpace(req.Description)
+	}
+	if req.RegularPrice != nil {
+		variant.RegularPrice = *req.RegularPrice
+	}
+	if req.SalePrice != nil {
+		variant.SalePrice = req.SalePrice
+	}
+	if req.CostPrice != nil {
+		variant.CostPrice = req.CostPrice
+	}
+	if req.StockQuantity != nil {
+		variant.StockQuantity = *req.StockQuantity
+	}
+	if req.StockStatus != "" {
+		variant.StockStatus = req.StockStatus
+	}
+	if req.ManageStock != nil {
+		variant.ManageStock = *req.ManageStock
+	}
+	if req.Image != "" {
+		variant.Image = strings.TrimSpace(req.Image)
+	}
+	if req.Attributes != nil {
+		attrsJSON, err := json.Marshal(req.Attributes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal variant attributes: %w", err)
+		}
+		variant.Attributes = string(attrsJSON)
+	}
+	if req.IsActive != nil {
+		variant.IsActive = *req.IsActive
+	}
+	if req.SortOrder != nil {
+		variant.SortOrder = *req.SortOrder
+	}
+
+	if err := s.productVariantRepo.Update(variant); err != nil {
+		return nil, fmt.Errorf("failed to update product variant: %w", err)
+	}
+
+	response := s.convertVariantToResponse(variant)
+	return &response, nil
+}
+
+// DeleteProductVariant deletes a product variant
+func (s *ProductService) DeleteProductVariant(productID, variantID uint) error {
+	// Check if product exists
+	_, err := s.productRepo.GetByID(productID)
+	if err != nil {
+		return fmt.Errorf("product not found")
+	}
+
+	// Get existing variant
+	variant, err := s.productVariantRepo.GetByID(variantID)
+	if err != nil {
+		return fmt.Errorf("product variant not found")
+	}
+
+	// Verify variant belongs to product
+	if variant.ProductID != productID {
+		return fmt.Errorf("product variant not found")
+	}
+
+	if err := s.productVariantRepo.Delete(variantID); err != nil {
+		return fmt.Errorf("failed to delete product variant: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateProductVariantStock updates stock for a product variant
+func (s *ProductService) UpdateProductVariantStock(productID, variantID uint, req *model.ProductVariantStockUpdateRequest) (*model.ProductVariantResponse, error) {
+	// Check if product exists
+	_, err := s.productRepo.GetByID(productID)
+	if err != nil {
+		return nil, fmt.Errorf("product not found")
+	}
+
+	// Get existing variant
+	variant, err := s.productVariantRepo.GetByID(variantID)
+	if err != nil {
+		return nil, fmt.Errorf("product variant not found")
+	}
+
+	// Verify variant belongs to product
+	if variant.ProductID != productID {
+		return nil, fmt.Errorf("product variant not found")
+	}
+
+	// Update stock fields
+	variant.StockQuantity = req.StockQuantity
+	variant.StockStatus = req.StockStatus
+	if req.ManageStock != nil {
+		variant.ManageStock = *req.ManageStock
+	}
+
+	if err := s.productVariantRepo.Update(variant); err != nil {
+		return nil, fmt.Errorf("failed to update variant stock: %w", err)
+	}
+
+	response := s.convertVariantToResponse(variant)
+	return &response, nil
+}
+
+// UpdateProductVariantStatus updates status for a product variant
+func (s *ProductService) UpdateProductVariantStatus(productID, variantID uint, req *model.ProductVariantStatusUpdateRequest) (*model.ProductVariantResponse, error) {
+	// Check if product exists
+	_, err := s.productRepo.GetByID(productID)
+	if err != nil {
+		return nil, fmt.Errorf("product not found")
+	}
+
+	// Get existing variant
+	variant, err := s.productVariantRepo.GetByID(variantID)
+	if err != nil {
+		return nil, fmt.Errorf("product variant not found")
+	}
+
+	// Verify variant belongs to product
+	if variant.ProductID != productID {
+		return nil, fmt.Errorf("product variant not found")
+	}
+
+	// Update status
+	variant.IsActive = *req.IsActive
+
+	if err := s.productVariantRepo.Update(variant); err != nil {
+		return nil, fmt.Errorf("failed to update variant status: %w", err)
+	}
+
+	response := s.convertVariantToResponse(variant)
+	return &response, nil
+}
+
+// convertVariantToResponse converts ProductVariant to ProductVariantResponse
+func (s *ProductService) convertVariantToResponse(variant *model.ProductVariant) model.ProductVariantResponse {
+	response := model.ProductVariantResponse{
+		ID:          variant.ID,
+		ProductID:   variant.ProductID,
+		Name:        variant.Name,
+		SKU:         variant.SKU,
+		Description: variant.Description,
+		RegularPrice: variant.RegularPrice,
+		SalePrice:   variant.SalePrice,
+		CostPrice:   variant.CostPrice,
+		StockQuantity: variant.StockQuantity,
+		StockStatus: variant.StockStatus,
+		ManageStock: variant.ManageStock,
+		Image:       variant.Image,
+		IsActive:    variant.IsActive,
+		SortOrder:   variant.SortOrder,
+		CreatedAt:   variant.CreatedAt,
+		UpdatedAt:   variant.UpdatedAt,
+	}
+
+	// Parse attributes JSON
+	if variant.Attributes != "" {
+		var attrs map[string]string
+		if err := json.Unmarshal([]byte(variant.Attributes), &attrs); err == nil {
+			response.Attributes = attrs
+		} else {
+			response.Attributes = make(map[string]string)
+		}
+	} else {
+		response.Attributes = make(map[string]string)
+	}
+
+	return response
+}

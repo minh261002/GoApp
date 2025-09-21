@@ -223,6 +223,45 @@ type ProductVariantCreateRequest struct {
 	SortOrder int   `json:"sort_order"`
 }
 
+// ProductVariantUpdateRequest represents the request to update a product variant
+type ProductVariantUpdateRequest struct {
+	Name        string `json:"name" validate:"omitempty,min=1,max=255"`
+	SKU         string `json:"sku"`
+	Description string `json:"description"`
+
+	// Pricing
+	RegularPrice *float64 `json:"regular_price" validate:"omitempty,min=0"`
+	SalePrice    *float64 `json:"sale_price" validate:"omitempty,min=0"`
+	CostPrice    *float64 `json:"cost_price" validate:"omitempty,min=0"`
+
+	// Inventory
+	StockQuantity *int   `json:"stock_quantity" validate:"omitempty,min=0"`
+	StockStatus   string `json:"stock_status" validate:"omitempty,oneof=instock outofstock onbackorder"`
+	ManageStock   *bool  `json:"manage_stock"`
+
+	// Media
+	Image string `json:"image"`
+
+	// Attributes (map format: {"size": "L", "color": "Red"})
+	Attributes map[string]string `json:"attributes"`
+
+	// Settings
+	IsActive  *bool `json:"is_active"`
+	SortOrder *int  `json:"sort_order"`
+}
+
+// ProductVariantStockUpdateRequest represents the request to update variant stock
+type ProductVariantStockUpdateRequest struct {
+	StockQuantity int    `json:"stock_quantity" validate:"min=0"`
+	StockStatus   string `json:"stock_status" validate:"oneof=instock outofstock onbackorder"`
+	ManageStock   *bool  `json:"manage_stock"`
+}
+
+// ProductVariantStatusUpdateRequest represents the request to update variant status
+type ProductVariantStatusUpdateRequest struct {
+	IsActive *bool `json:"is_active" validate:"required"`
+}
+
 // ProductAttributeCreateRequest represents the request to create a product attribute
 type ProductAttributeCreateRequest struct {
 	Name  string `json:"name" validate:"required,min=1,max=100"`

@@ -623,3 +623,336 @@ func (h *ProductHandler) GetProductStats(c *gin.Context) {
 
 	response.SuccessResponse(c, http.StatusOK, "Product statistics retrieved successfully", stats)
 }
+
+// ===== PRODUCT VARIANTS ENDPOINTS =====
+
+// GetProductVariants gets all variants for a product
+// @Summary Get product variants
+// @Description Get all variants for a specific product
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product_id path int true "Product ID"
+// @Success 200 {object} response.SuccessResponse{data=[]model.ProductVariantResponse}
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /api/v1/products/{product_id}/variants [get]
+func (h *ProductHandler) GetProductVariants(c *gin.Context) {
+	productIDStr := c.Param("product_id")
+	productID, err := strconv.ParseUint(productIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid product ID", "Product ID must be a valid number")
+		return
+	}
+
+	variants, err := h.productService.GetProductVariants(uint(productID))
+	if err != nil {
+		if err.Error() == "product not found" {
+			response.Error(c, http.StatusNotFound, "Product not found", err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, "Failed to get product variants", err.Error())
+		return
+	}
+
+	response.SuccessResponse(c, http.StatusOK, "Product variants retrieved successfully", variants)
+}
+
+// GetProductVariant gets a specific product variant
+// @Summary Get product variant
+// @Description Get a specific product variant by ID
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product_id path int true "Product ID"
+// @Param variant_id path int true "Variant ID"
+// @Success 200 {object} response.SuccessResponse{data=model.ProductVariantResponse}
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /api/v1/products/{product_id}/variants/{variant_id} [get]
+func (h *ProductHandler) GetProductVariant(c *gin.Context) {
+	productIDStr := c.Param("product_id")
+	productID, err := strconv.ParseUint(productIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid product ID", "Product ID must be a valid number")
+		return
+	}
+
+	variantIDStr := c.Param("variant_id")
+	variantID, err := strconv.ParseUint(variantIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid variant ID", "Variant ID must be a valid number")
+		return
+	}
+
+	variant, err := h.productService.GetProductVariant(uint(productID), uint(variantID))
+	if err != nil {
+		if err.Error() == "product variant not found" {
+			response.Error(c, http.StatusNotFound, "Product variant not found", err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, "Failed to get product variant", err.Error())
+		return
+	}
+
+	response.SuccessResponse(c, http.StatusOK, "Product variant retrieved successfully", variant)
+}
+
+// CreateProductVariant creates a new product variant
+// @Summary Create product variant
+// @Description Create a new variant for a product
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product_id path int true "Product ID"
+// @Param variant body model.ProductVariantCreateRequest true "Variant information"
+// @Success 201 {object} response.SuccessResponse{data=model.ProductVariantResponse}
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /api/v1/products/{product_id}/variants [post]
+func (h *ProductHandler) CreateProductVariant(c *gin.Context) {
+	productIDStr := c.Param("product_id")
+	productID, err := strconv.ParseUint(productIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid product ID", "Product ID must be a valid number")
+		return
+	}
+
+	var req model.ProductVariantCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request body", err.Error())
+		return
+	}
+
+	// Validate request
+	if err := validator.ValidateStruct(req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Validation failed", err.Error())
+		return
+	}
+
+	variant, err := h.productService.CreateProductVariant(uint(productID), &req)
+	if err != nil {
+		if err.Error() == "product not found" {
+			response.Error(c, http.StatusNotFound, "Product not found", err.Error())
+			return
+		}
+		if err.Error() == "variant with SKU already exists" {
+			response.Error(c, http.StatusConflict, "Variant SKU already exists", err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, "Failed to create product variant", err.Error())
+		return
+	}
+
+	response.SuccessResponse(c, http.StatusCreated, "Product variant created successfully", variant)
+}
+
+// UpdateProductVariant updates a product variant
+// @Summary Update product variant
+// @Description Update an existing product variant
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product_id path int true "Product ID"
+// @Param variant_id path int true "Variant ID"
+// @Param variant body model.ProductVariantUpdateRequest true "Variant information"
+// @Success 200 {object} response.SuccessResponse{data=model.ProductVariantResponse}
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /api/v1/products/{product_id}/variants/{variant_id} [put]
+func (h *ProductHandler) UpdateProductVariant(c *gin.Context) {
+	productIDStr := c.Param("product_id")
+	productID, err := strconv.ParseUint(productIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid product ID", "Product ID must be a valid number")
+		return
+	}
+
+	variantIDStr := c.Param("variant_id")
+	variantID, err := strconv.ParseUint(variantIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid variant ID", "Variant ID must be a valid number")
+		return
+	}
+
+	var req model.ProductVariantUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request body", err.Error())
+		return
+	}
+
+	// Validate request
+	if err := validator.ValidateStruct(req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Validation failed", err.Error())
+		return
+	}
+
+	variant, err := h.productService.UpdateProductVariant(uint(productID), uint(variantID), &req)
+	if err != nil {
+		if err.Error() == "product variant not found" {
+			response.Error(c, http.StatusNotFound, "Product variant not found", err.Error())
+			return
+		}
+		if err.Error() == "variant with SKU already exists" {
+			response.Error(c, http.StatusConflict, "Variant SKU already exists", err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, "Failed to update product variant", err.Error())
+		return
+	}
+
+	response.SuccessResponse(c, http.StatusOK, "Product variant updated successfully", variant)
+}
+
+// DeleteProductVariant deletes a product variant
+// @Summary Delete product variant
+// @Description Delete a product variant
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product_id path int true "Product ID"
+// @Param variant_id path int true "Variant ID"
+// @Success 200 {object} response.SuccessResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /api/v1/products/{product_id}/variants/{variant_id} [delete]
+func (h *ProductHandler) DeleteProductVariant(c *gin.Context) {
+	productIDStr := c.Param("product_id")
+	productID, err := strconv.ParseUint(productIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid product ID", "Product ID must be a valid number")
+		return
+	}
+
+	variantIDStr := c.Param("variant_id")
+	variantID, err := strconv.ParseUint(variantIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid variant ID", "Variant ID must be a valid number")
+		return
+	}
+
+	err = h.productService.DeleteProductVariant(uint(productID), uint(variantID))
+	if err != nil {
+		if err.Error() == "product variant not found" {
+			response.Error(c, http.StatusNotFound, "Product variant not found", err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, "Failed to delete product variant", err.Error())
+		return
+	}
+
+	response.SuccessResponse(c, http.StatusOK, "Product variant deleted successfully", nil)
+}
+
+// UpdateProductVariantStock updates stock for a product variant
+// @Summary Update variant stock
+// @Description Update stock quantity for a product variant
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product_id path int true "Product ID"
+// @Param variant_id path int true "Variant ID"
+// @Param stock body model.ProductVariantStockUpdateRequest true "Stock information"
+// @Success 200 {object} response.SuccessResponse{data=model.ProductVariantResponse}
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /api/v1/products/{product_id}/variants/{variant_id}/stock [patch]
+func (h *ProductHandler) UpdateProductVariantStock(c *gin.Context) {
+	productIDStr := c.Param("product_id")
+	productID, err := strconv.ParseUint(productIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid product ID", "Product ID must be a valid number")
+		return
+	}
+
+	variantIDStr := c.Param("variant_id")
+	variantID, err := strconv.ParseUint(variantIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid variant ID", "Variant ID must be a valid number")
+		return
+	}
+
+	var req model.ProductVariantStockUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request body", err.Error())
+		return
+	}
+
+	// Validate request
+	if err := validator.ValidateStruct(req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Validation failed", err.Error())
+		return
+	}
+
+	variant, err := h.productService.UpdateProductVariantStock(uint(productID), uint(variantID), &req)
+	if err != nil {
+		if err.Error() == "product variant not found" {
+			response.Error(c, http.StatusNotFound, "Product variant not found", err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, "Failed to update variant stock", err.Error())
+		return
+	}
+
+	response.SuccessResponse(c, http.StatusOK, "Variant stock updated successfully", variant)
+}
+
+// UpdateProductVariantStatus updates status for a product variant
+// @Summary Update variant status
+// @Description Update active status for a product variant
+// @Tags products
+// @Accept json
+// @Produce json
+// @Param product_id path int true "Product ID"
+// @Param variant_id path int true "Variant ID"
+// @Param status body model.ProductVariantStatusUpdateRequest true "Status information"
+// @Success 200 {object} response.SuccessResponse{data=model.ProductVariantResponse}
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /api/v1/products/{product_id}/variants/{variant_id}/status [patch]
+func (h *ProductHandler) UpdateProductVariantStatus(c *gin.Context) {
+	productIDStr := c.Param("product_id")
+	productID, err := strconv.ParseUint(productIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid product ID", "Product ID must be a valid number")
+		return
+	}
+
+	variantIDStr := c.Param("variant_id")
+	variantID, err := strconv.ParseUint(variantIDStr, 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid variant ID", "Variant ID must be a valid number")
+		return
+	}
+
+	var req model.ProductVariantStatusUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request body", err.Error())
+		return
+	}
+
+	// Validate request
+	if err := validator.ValidateStruct(req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Validation failed", err.Error())
+		return
+	}
+
+	variant, err := h.productService.UpdateProductVariantStatus(uint(productID), uint(variantID), &req)
+	if err != nil {
+		if err.Error() == "product variant not found" {
+			response.Error(c, http.StatusNotFound, "Product variant not found", err.Error())
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, "Failed to update variant status", err.Error())
+		return
+	}
+
+	response.SuccessResponse(c, http.StatusOK, "Variant status updated successfully", variant)
+}

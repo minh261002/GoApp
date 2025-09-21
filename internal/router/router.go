@@ -167,6 +167,10 @@ func SetupRoutes(r *gin.Engine) {
 			products.GET("/slug/:slug", ratelimit.IPBasedRateLimit(200, time.Hour), productHandler.GetProductBySlug)
 			products.GET("/sku/:sku", ratelimit.IPBasedRateLimit(200, time.Hour), productHandler.GetProductBySKU)
 			products.GET("/:id", productHandler.GetProductByID)
+
+			// Product Variants - Public routes (no authentication required)
+			products.GET("/:product_id/variants", ratelimit.IPBasedRateLimit(200, time.Hour), productHandler.GetProductVariants)
+			products.GET("/:product_id/variants/:variant_id", ratelimit.IPBasedRateLimit(200, time.Hour), productHandler.GetProductVariant)
 		}
 
 		// Upload routes (public for reading, protected for writing)
@@ -351,6 +355,15 @@ func SetupRoutes(r *gin.Engine) {
 				productManagement.PATCH("/:id/status", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.UpdateProductStatus)
 				// Bulk update status - requires write permission
 				productManagement.PATCH("/bulk-status", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.BulkUpdateProductStatus)
+
+				// Product Variants - requires write permission
+				productManagement.GET("/:product_id/variants", middleware.ReadPermissionMiddleware(model.ResourceTypeProduct), productHandler.GetProductVariants)
+				productManagement.GET("/:product_id/variants/:variant_id", middleware.ReadPermissionMiddleware(model.ResourceTypeProduct), productHandler.GetProductVariant)
+				productManagement.POST("/:product_id/variants", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.CreateProductVariant)
+				productManagement.PUT("/:product_id/variants/:variant_id", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.UpdateProductVariant)
+				productManagement.DELETE("/:product_id/variants/:variant_id", middleware.DeletePermissionMiddleware(model.ResourceTypeProduct), productHandler.DeleteProductVariant)
+				productManagement.PATCH("/:product_id/variants/:variant_id/stock", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.UpdateProductVariantStock)
+				productManagement.PATCH("/:product_id/variants/:variant_id/status", middleware.WritePermissionMiddleware(model.ResourceTypeProduct), productHandler.UpdateProductVariantStatus)
 			}
 
 			// Upload management routes (require authentication and permissions)
