@@ -144,7 +144,7 @@ func (s *addressService) GetAddressByID(id uint, userID uint) (*model.AddressRes
 	}
 
 	// Allow access if user owns the address or is admin
-	if address.UserID != userID && user.Role != "admin" && user.Role != "super_admin" {
+	if address.UserID != userID && (user.UserRole == nil || (user.UserRole.Name != "admin" && user.UserRole.Name != "super_admin")) {
 		return nil, errors.New("access denied: you can only view your own addresses")
 	}
 
@@ -202,7 +202,7 @@ func (s *addressService) UpdateAddress(id uint, req *model.AddressUpdateRequest,
 		return nil, errors.New("user not found")
 	}
 
-	if address.UserID != userID && user.Role != "admin" && user.Role != "super_admin" {
+	if address.UserID != userID && (user.UserRole == nil || (user.UserRole.Name != "admin" && user.UserRole.Name != "super_admin")) {
 		return nil, errors.New("access denied: you can only update your own addresses")
 	}
 
@@ -314,7 +314,7 @@ func (s *addressService) DeleteAddress(id uint, userID uint) error {
 		return errors.New("user not found")
 	}
 
-	if address.UserID != userID && user.Role != "admin" && user.Role != "super_admin" {
+	if address.UserID != userID && (user.UserRole == nil || (user.UserRole.Name != "admin" && user.UserRole.Name != "super_admin")) {
 		return errors.New("access denied: you can only delete your own addresses")
 	}
 

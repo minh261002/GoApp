@@ -112,7 +112,7 @@ func Load() *Config {
 			DocumentMaxSize: getEnvAsInt64("UPLOAD_DOCUMENT_MAX_SIZE", 20*1024*1024), // 20MB
 		},
 		LogLevel: getEnv("LOG_LEVEL", "info"),
-		GinMode:  getEnv("GIN_MODE", "debug"),
+		GinMode:  "release",
 	}
 }
 

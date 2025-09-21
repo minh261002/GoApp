@@ -145,17 +145,17 @@ type SearchAnalytics struct {
 
 // SearchIndex represents a search index entry
 type SearchIndex struct {
-	ID         uint      `json:"id" gorm:"primaryKey"`
-	EntityType string    `json:"entity_type" gorm:"size:50;not null;index"`
-	EntityID   uint      `json:"entity_id" gorm:"not null;index"`
-	Title      string    `json:"title" gorm:"size:500;not null"`
-	Content    string    `json:"content" gorm:"type:text"`
-	Keywords   string    `json:"keywords" gorm:"type:text"`
-	Tags       string    `json:"tags" gorm:"type:json"`
-	Metadata   string    `json:"metadata" gorm:"type:json"`
-	Weight     float64   `json:"weight" gorm:"type:decimal(5,2);default:1.0"`
-	IsActive   bool      `json:"is_active" gorm:"default:true"`
-	IndexedAt  time.Time `json:"indexed_at" gorm:"default:CURRENT_TIMESTAMP"`
+	ID         uint       `json:"id" gorm:"primaryKey"`
+	EntityType string     `json:"entity_type" gorm:"size:50;not null;index"`
+	EntityID   uint       `json:"entity_id" gorm:"not null;index"`
+	Title      string     `json:"title" gorm:"size:500;not null"`
+	Content    string     `json:"content" gorm:"type:text"`
+	Keywords   string     `json:"keywords" gorm:"type:text"`
+	Tags       string     `json:"tags" gorm:"type:json"`
+	Metadata   string     `json:"metadata" gorm:"type:json"`
+	Weight     float64    `json:"weight" gorm:"type:decimal(5,2);default:1.0"`
+	IsActive   bool       `json:"is_active" gorm:"default:true"`
+	IndexedAt  *time.Time `json:"indexed_at"`
 
 	// Timestamps
 	CreatedAt time.Time  `json:"created_at"`

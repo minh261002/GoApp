@@ -192,7 +192,7 @@ func (s *reviewService) GetReviewByID(id uint, userID uint) (*model.ReviewRespon
 	}
 
 	// Allow access if user owns the review, is admin, or review is approved
-	if review.UserID != userID && user.Role != "admin" && user.Role != "super_admin" && review.Status != model.ReviewStatusApproved {
+	if review.UserID != userID && (user.UserRole == nil || (user.UserRole.Name != "admin" && user.UserRole.Name != "super_admin")) && review.Status != model.ReviewStatusApproved {
 		return nil, errors.New("access denied: you can only view your own reviews or approved reviews")
 	}
 
@@ -265,7 +265,7 @@ func (s *reviewService) UpdateReview(id uint, req *model.ReviewUpdateRequest, us
 		return nil, errors.New("user not found")
 	}
 
-	if review.UserID != userID && user.Role != "admin" && user.Role != "super_admin" {
+	if review.UserID != userID && (user.UserRole == nil || (user.UserRole.Name != "admin" && user.UserRole.Name != "super_admin")) {
 		return nil, errors.New("access denied: you can only update your own reviews")
 	}
 
@@ -358,7 +358,7 @@ func (s *reviewService) DeleteReview(id uint, userID uint) error {
 		return errors.New("user not found")
 	}
 
-	if review.UserID != userID && user.Role != "admin" && user.Role != "super_admin" {
+	if review.UserID != userID && (user.UserRole == nil || (user.UserRole.Name != "admin" && user.UserRole.Name != "super_admin")) {
 		return errors.New("access denied: you can only delete your own reviews")
 	}
 

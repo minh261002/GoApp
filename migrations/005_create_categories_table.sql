@@ -1,6 +1,6 @@
 -- Create categories table with hierarchical structure
 CREATE TABLE IF NOT EXISTS categories (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     slug VARCHAR(120) NOT NULL UNIQUE,
     description TEXT,

@@ -2,8 +2,6 @@
 # This file allows you to override default settings for development
 # Copy this file and modify ports as needed for your environment
 
-version: '3.8'
-
 services:
   # MySQL Database - Custom Port
   mysql:

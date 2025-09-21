@@ -1,8 +1,8 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS orders (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     order_number VARCHAR(50) NOT NULL UNIQUE,
-    user_id INT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
     status VARCHAR(20) DEFAULT 'pending',
     payment_status VARCHAR(20) DEFAULT 'pending',
     shipping_status VARCHAR(20) DEFAULT 'pending',
@@ -56,9 +56,9 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 CREATE TABLE IF NOT EXISTS order_items (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    order_id INT UNSIGNED NOT NULL,
-    product_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT UNSIGNED NOT NULL,
+    product_id BIGINT UNSIGNED NOT NULL,
     product_variant_id INT UNSIGNED NULL,
     
     -- Product Information (snapshot at time of order)
@@ -92,8 +92,8 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 CREATE TABLE IF NOT EXISTS carts (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
     session_id VARCHAR(100),
     
     -- Cart Information
@@ -122,9 +122,9 @@ CREATE TABLE IF NOT EXISTS carts (
 );
 
 CREATE TABLE IF NOT EXISTS cart_items (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    cart_id INT UNSIGNED NOT NULL,
-    product_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    cart_id BIGINT UNSIGNED NOT NULL,
+    product_id BIGINT UNSIGNED NOT NULL,
     product_variant_id INT UNSIGNED NULL,
     
     quantity INT NOT NULL,
@@ -146,9 +146,9 @@ CREATE TABLE IF NOT EXISTS cart_items (
 );
 
 CREATE TABLE IF NOT EXISTS payments (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    order_id INT UNSIGNED NOT NULL,
-    user_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
     
     -- Payment Information
     payment_method VARCHAR(20) NOT NULL,
@@ -182,8 +182,8 @@ CREATE TABLE IF NOT EXISTS payments (
 );
 
 CREATE TABLE IF NOT EXISTS shipping_history (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    order_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT UNSIGNED NOT NULL,
     
     -- Status Information
     status VARCHAR(20) NOT NULL,
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS shipping_history (
     notes TEXT,
     
     -- Additional Information
-    updated_by INT UNSIGNED,
+    updated_by BIGINT UNSIGNED,
     
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     

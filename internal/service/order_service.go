@@ -117,7 +117,7 @@ func (s *orderService) CreateOrder(req *model.OrderCreateRequest, userID uint) (
 		}
 
 		// Only admin users can create orders for other users
-		if currentUser.Role != "admin" && currentUser.Role != "super_admin" {
+		if currentUser.UserRole == nil || (currentUser.UserRole.Name != "admin" && currentUser.UserRole.Name != "super_admin") {
 			return nil, errors.New("only admin users can create orders for other users")
 		}
 

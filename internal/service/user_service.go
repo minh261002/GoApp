@@ -97,7 +97,7 @@ func (s *AuthService) Register(req *RegisterRequest) (*model.User, error) {
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Phone:     req.Phone,
-		Role:      "user", // Default role
+		RoleID:    1, // Default role ID (assuming 'user' role has ID = 1)
 		IsActive:  true,
 	}
 
@@ -147,7 +147,7 @@ func (s *AuthService) Login(req *LoginRequest) (*AuthResponse, error) {
 		user.ID,
 		user.Username,
 		user.Email,
-		user.Role,
+		user.UserRole.Name,
 		fmt.Sprintf("%d", session.ID),
 	)
 	if err != nil {

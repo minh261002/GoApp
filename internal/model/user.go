@@ -16,7 +16,8 @@ type User struct {
 	LastName        string         `json:"last_name" gorm:"size:50" validate:"max=50"`
 	Phone           string         `json:"phone" gorm:"size:20" validate:"phone"`
 	Avatar          string         `json:"avatar" gorm:"size:255"`
-	Role            string         `json:"role" gorm:"size:20;default:user" validate:"oneof=user admin moderator"`
+	RoleID          uint           `json:"role_id" gorm:"not null;index"`
+	UserRole        *Role          `json:"role,omitempty" gorm:"foreignKey:RoleID"`
 	IsActive        bool           `json:"is_active" gorm:"default:true"`
 	IsEmailVerified bool           `json:"is_email_verified" gorm:"default:false"`
 	LastLogin       *time.Time     `json:"last_login,omitempty"`
@@ -36,9 +37,9 @@ func (User) TableName() string {
 
 // BeforeCreate hook runs before creating a user
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	// Set default role if not specified
-	if u.Role == "" {
-		u.Role = "user"
+	// Set default role if not specified (role_id = 1 for 'user' role)
+	if u.RoleID == 0 {
+		u.RoleID = 1 // Assuming role_id 1 is 'user' role
 	}
 	return nil
 }
@@ -53,10 +54,10 @@ func (u *User) GetFullName() string {
 
 // IsAdmin checks if user is admin
 func (u *User) IsAdmin() bool {
-	return u.Role == "admin"
+	return u.UserRole != nil && u.UserRole.Name == "admin"
 }
 
 // IsModerator checks if user is moderator or admin
 func (u *User) IsModerator() bool {
-	return u.Role == "moderator" || u.Role == "admin"
+	return u.UserRole != nil && (u.UserRole.Name == "moderator" || u.UserRole.Name == "admin")
 }

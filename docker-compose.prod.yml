@@ -1,8 +1,6 @@
 # Docker Compose Production Configuration
 # This file contains production-specific settings
 
-version: '3.8'
-
 services:
   # MySQL Database - Production Ports
   mysql:
@@ -100,6 +98,8 @@ volumes:
   mysql_data:
     driver: local
   redis_data:
+    driver: local
+  uploads_data:
     driver: local
 
 networks:

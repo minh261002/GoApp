@@ -2,8 +2,8 @@
 
 -- Create order_trackings table
 CREATE TABLE IF NOT EXISTS order_trackings (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    order_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT UNSIGNED NOT NULL,
     
     -- Tracking Information
     tracking_number VARCHAR(100) NOT NULL,
@@ -51,8 +51,8 @@ CREATE TABLE IF NOT EXISTS order_trackings (
 
 -- Create order_tracking_events table
 CREATE TABLE IF NOT EXISTS order_tracking_events (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    order_tracking_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_tracking_id BIGINT UNSIGNED NOT NULL,
     
     -- Event Information
     status VARCHAR(50) NOT NULL,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS order_tracking_events (
 
 -- Create order_tracking_webhooks table
 CREATE TABLE IF NOT EXISTS order_tracking_webhooks (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     carrier VARCHAR(50) NOT NULL,
     carrier_code VARCHAR(20) NOT NULL,
     
@@ -121,10 +121,10 @@ CREATE TABLE IF NOT EXISTS order_tracking_webhooks (
 
 -- Create order_tracking_notifications table
 CREATE TABLE IF NOT EXISTS order_tracking_notifications (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    order_tracking_id INT UNSIGNED NOT NULL,
-    user_id INT UNSIGNED NOT NULL,
-    event_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    order_tracking_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    event_id BIGINT UNSIGNED NOT NULL,
     
     -- Notification Details
     type VARCHAR(50) NOT NULL,

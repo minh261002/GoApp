@@ -1,6 +1,6 @@
 -- Create products table
 CREATE TABLE IF NOT EXISTS products (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(300) NOT NULL UNIQUE,
     description TEXT,
@@ -69,8 +69,8 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- Create product_variants table
 CREATE TABLE IF NOT EXISTS product_variants (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    product_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT UNSIGNED NOT NULL,
     
     -- Variant Info
     name VARCHAR(255) NOT NULL,
@@ -115,8 +115,8 @@ CREATE TABLE IF NOT EXISTS product_variants (
 
 -- Create product_attributes table
 CREATE TABLE IF NOT EXISTS product_attributes (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    product_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT UNSIGNED NOT NULL,
     
     -- Attribute Info
     name VARCHAR(100) NOT NULL,

@@ -76,7 +76,6 @@ type Role struct {
 
 	// Relations
 	RolePermissions []RolePermission `json:"role_permissions,omitempty" gorm:"foreignKey:RoleID"`
-	Users           []User           `json:"users,omitempty" gorm:"foreignKey:Role"`
 }
 
 // RolePermission represents the many-to-many relationship between roles and permissions

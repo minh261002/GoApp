@@ -34,7 +34,7 @@ func (r *userRepository) Create(user *model.User) error {
 
 func (r *userRepository) GetByID(id uint) (*model.User, error) {
 	var user model.User
-	err := r.db.Preload("Sessions").Preload("OTPs").First(&user, id).Error
+	err := r.db.Preload("Sessions").Preload("OTPs").Preload("UserRole").First(&user, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (r *userRepository) GetByID(id uint) (*model.User, error) {
 
 func (r *userRepository) GetByEmail(email string) (*model.User, error) {
 	var user model.User
-	err := r.db.Preload("Sessions").Preload("OTPs").Where("email = ?", email).First(&user).Error
+	err := r.db.Preload("Sessions").Preload("OTPs").Preload("UserRole").Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (r *userRepository) GetByEmail(email string) (*model.User, error) {
 
 func (r *userRepository) GetByUsername(username string) (*model.User, error) {
 	var user model.User
-	err := r.db.Preload("Sessions").Preload("OTPs").Where("username = ?", username).First(&user).Error
+	err := r.db.Preload("Sessions").Preload("OTPs").Preload("UserRole").Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return nil, err
 	}

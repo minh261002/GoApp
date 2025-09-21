@@ -399,7 +399,7 @@ func (r *searchRepository) SearchUsers(query string, filters map[string]interfac
 			Score:       1.0,
 			Metadata: map[string]interface{}{
 				"email":      user.Email,
-				"role":       user.Role,
+				"role":       user.UserRole.Name,
 				"status":     "active", // TODO: Add Status field to User model
 				"first_name": user.FirstName,
 				"last_name":  user.LastName,

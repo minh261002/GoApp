@@ -1,6 +1,6 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS coupons (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS coupons (
     is_new_user_only BOOLEAN DEFAULT FALSE,
     
     -- Metadata
-    created_by INT UNSIGNED NOT NULL,
+    created_by BIGINT UNSIGNED NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
@@ -49,10 +49,10 @@ CREATE TABLE IF NOT EXISTS coupons (
 
 -- Create Coupon Usage Table
 CREATE TABLE IF NOT EXISTS coupon_usages (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    coupon_id INT UNSIGNED NOT NULL,
-    user_id INT UNSIGNED NOT NULL,
-    order_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    coupon_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    order_id BIGINT UNSIGNED NOT NULL,
     
     -- Usage Details
     discount_amount DECIMAL(10,2) NOT NULL,
@@ -76,8 +76,8 @@ CREATE TABLE IF NOT EXISTS coupon_usages (
 
 -- Create Points Table
 CREATE TABLE IF NOT EXISTS points (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNSIGNED NOT NULL UNIQUE,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL UNIQUE,
     
     -- Point Balances
     balance INT DEFAULT 0,
@@ -103,9 +103,9 @@ CREATE TABLE IF NOT EXISTS points (
 
 -- Create Point Transactions Table
 CREATE TABLE IF NOT EXISTS point_transactions (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    point_id INT UNSIGNED NOT NULL,
-    user_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    point_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
     
     -- Transaction Details
     type VARCHAR(20) NOT NULL, -- earn, redeem, expire, refund, adjust
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS point_transactions (
     
     -- Reference Information
     reference_type VARCHAR(50), -- order, coupon, manual, etc.
-    reference_id INT UNSIGNED,
+    reference_id BIGINT UNSIGNED,
     order_id INT UNSIGNED NULL,
     
     -- Description

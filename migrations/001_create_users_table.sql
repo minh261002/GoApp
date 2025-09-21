@@ -1,6 +1,6 @@
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name VARCHAR(50),
     phone VARCHAR(20),
     avatar VARCHAR(255),
-    role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin', 'moderator')),
+    role_id BIGINT UNSIGNED NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     is_email_verified BOOLEAN DEFAULT FALSE,
     last_login TIMESTAMP NULL,
@@ -17,5 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
     deleted_at TIMESTAMP NULL,
     INDEX idx_users_email (email),
     INDEX idx_users_username (username),
-    INDEX idx_users_deleted_at (deleted_at)
+    INDEX idx_users_role_id (role_id),
+    INDEX idx_users_deleted_at (deleted_at),
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT ON UPDATE CASCADE
 );

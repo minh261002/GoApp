@@ -441,7 +441,7 @@ func (r *permissionRepository) GetUserEffectivePermissions(userID uint) ([]model
 	}
 
 	// Get permissions from role
-	rolePermissions, err := r.GetRolePermissionsByRoleName(user.Role)
+	rolePermissions, err := r.GetRolePermissionsByRoleName(user.UserRole.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -536,7 +536,7 @@ func (r *permissionRepository) GetUserPermissionsForResource(userID uint, resour
 		return nil, err
 	}
 
-	rolePermissions, err := r.GetRolePermissionsByRoleName(user.Role)
+	rolePermissions, err := r.GetRolePermissionsByRoleName(user.UserRole.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -682,7 +682,7 @@ func (r *permissionRepository) GetUserPermissionStats(userID uint) (map[string]i
 	if err := r.db.First(&user, userID).Error; err != nil {
 		return nil, err
 	}
-	stats["role"] = user.Role
+	stats["role"] = user.UserRole.Name
 
 	// Count role permissions
 	rolePermissionCount, err := r.GetRolePermissionIDs(userID)

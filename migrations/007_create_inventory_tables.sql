@@ -1,7 +1,7 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS inventory_movements (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    product_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT UNSIGNED NOT NULL,
     variant_id INT UNSIGNED NULL,
     type VARCHAR(50) NOT NULL, -- inbound, outbound, adjustment, transfer, return
     status VARCHAR(50) DEFAULT 'pending', -- pending, approved, completed, cancelled
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS inventory_movements (
     reference VARCHAR(255), -- PO number, SO number, etc.
     reference_type VARCHAR(50), -- purchase_order, sales_order, etc.
     notes TEXT,
-    created_by INT UNSIGNED NOT NULL,
+    created_by BIGINT UNSIGNED NOT NULL,
     approved_by INT UNSIGNED NULL,
     approved_at TIMESTAMP NULL,
     completed_at TIMESTAMP NULL,
@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS inventory_movements (
 );
 
 CREATE TABLE IF NOT EXISTS stock_levels (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    product_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT UNSIGNED NOT NULL,
     variant_id INT UNSIGNED NULL,
     available_quantity INT DEFAULT 0, -- Số lượng có sẵn
     reserved_quantity INT DEFAULT 0,  -- Số lượng đã đặt
@@ -63,15 +63,15 @@ CREATE TABLE IF NOT EXISTS stock_levels (
 );
 
 CREATE TABLE IF NOT EXISTS inventory_adjustments (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    product_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT UNSIGNED NOT NULL,
     variant_id INT UNSIGNED NULL,
     reason VARCHAR(255) NOT NULL, -- Lý do điều chỉnh
     quantity_before INT NOT NULL, -- Số lượng trước
     quantity_after INT NOT NULL,  -- Số lượng sau
     quantity_diff INT NOT NULL,   -- Chênh lệch
     notes TEXT,
-    created_by INT UNSIGNED NOT NULL,
+    created_by BIGINT UNSIGNED NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,

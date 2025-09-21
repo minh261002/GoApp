@@ -8,9 +8,9 @@ ADD COLUMN priority INT DEFAULT 0;
 
 -- Create cart_shares table
 CREATE TABLE IF NOT EXISTS cart_shares (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    cart_id INT UNSIGNED NOT NULL,
-    shared_by INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    cart_id BIGINT UNSIGNED NOT NULL,
+    shared_by BIGINT UNSIGNED NOT NULL,
     
     -- Share Information
     token VARCHAR(255) NOT NULL UNIQUE,
@@ -48,9 +48,9 @@ CREATE TABLE IF NOT EXISTS cart_shares (
 
 -- Create saved_for_later table
 CREATE TABLE IF NOT EXISTS saved_for_later (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNSIGNED NOT NULL,
-    product_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    product_id BIGINT UNSIGNED NOT NULL,
     product_variant_id INT UNSIGNED NULL,
     
     -- Item Information

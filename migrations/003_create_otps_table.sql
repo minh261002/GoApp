@@ -1,7 +1,7 @@
 -- Create otps table
 CREATE TABLE IF NOT EXISTS otps (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
     email VARCHAR(100) NOT NULL,
     code VARCHAR(10) NOT NULL,
     type VARCHAR(20) NOT NULL CHECK (type IN ('password_reset', 'email_verify')),

@@ -2,7 +2,7 @@
 
 -- Create notifications table
 CREATE TABLE IF NOT EXISTS notifications (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NULL,
     type VARCHAR(50) NOT NULL,
     priority VARCHAR(20) NOT NULL DEFAULT 'normal',
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 -- Create notification_templates table
 CREATE TABLE IF NOT EXISTS notification_templates (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     type VARCHAR(50) NOT NULL,
     channel VARCHAR(20) NOT NULL,
@@ -66,8 +66,8 @@ CREATE TABLE IF NOT EXISTS notification_templates (
 
 -- Create notification_preferences table
 CREATE TABLE IF NOT EXISTS notification_preferences (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
     type VARCHAR(50) NOT NULL,
     channel VARCHAR(20) NOT NULL,
     is_enabled BOOLEAN DEFAULT TRUE,
@@ -90,8 +90,8 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
 
 -- Create notification_logs table
 CREATE TABLE IF NOT EXISTS notification_logs (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    notification_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    notification_id BIGINT UNSIGNED NOT NULL,
     channel VARCHAR(20) NOT NULL,
     status VARCHAR(20) NOT NULL,
     provider VARCHAR(100),
@@ -116,8 +116,8 @@ CREATE TABLE IF NOT EXISTS notification_logs (
 
 -- Create notification_queue table
 CREATE TABLE IF NOT EXISTS notification_queue (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    notification_id INT UNSIGNED NOT NULL,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    notification_id BIGINT UNSIGNED NOT NULL,
     priority VARCHAR(20) NOT NULL DEFAULT 'normal',
     channel VARCHAR(20) NOT NULL,
     scheduled_at TIMESTAMP NOT NULL,
@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS notification_queue (
 
 -- Create notification_stats table
 CREATE TABLE IF NOT EXISTS notification_stats (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     date DATE NOT NULL,
     type VARCHAR(50) NOT NULL,
     channel VARCHAR(20) NOT NULL,
