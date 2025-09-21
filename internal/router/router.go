@@ -78,6 +78,11 @@ func SetupRoutes(r *gin.Engine) {
 	rateLimitService := service.NewRateLimitService(rateLimitRepo, nil) // TODO: Pass Redis client
 	rateLimitHandler := handler.NewRateLimitHandler(rateLimitService)
 
+	// Initialize analytics service
+	analyticsRepo := repository.NewAnalyticsRepository(database.GetDB())
+	analyticsService := service.NewAnalyticsService(analyticsRepo, repository.NewUserRepository())
+	analyticsHandler := handler.NewAnalyticsHandler(analyticsService)
+
 	// Initialize event service
 	eventService := service.NewEventService(notificationService, nil, nil)
 	eventHandler := handler.NewEventHandler(eventService)
@@ -949,6 +954,48 @@ func SetupRoutes(r *gin.Engine) {
 			{
 				shippingStats.GET("", shippingHandler.GetShippingStats)
 				shippingStats.GET("/provider/:provider_id", shippingHandler.GetShippingStatsByProvider)
+			}
+		}
+
+		// Analytics Management routes (require authentication)
+		analyticsManagement := protected.Group("/analytics")
+		analyticsManagement.Use(middleware.ReadPermissionMiddleware(model.ResourceTypeSystem))
+		{
+			// Reports
+			reports := analyticsManagement.Group("/reports")
+			{
+				reports.POST("", analyticsHandler.CreateReport)
+				reports.GET("", analyticsHandler.GetAllReports)
+				reports.GET("/my", analyticsHandler.GetReportsByUser)
+				reports.GET("/:id", analyticsHandler.GetReportByID)
+				reports.PUT("/:id", analyticsHandler.UpdateReport)
+				reports.DELETE("/:id", analyticsHandler.DeleteReport)
+				reports.POST("/:id/generate", analyticsHandler.GenerateReport)
+			}
+
+			// Dashboards
+			dashboards := analyticsManagement.Group("/dashboards")
+			{
+				dashboards.POST("", analyticsHandler.CreateDashboard)
+				dashboards.GET("", analyticsHandler.GetAllDashboards)
+				dashboards.GET("/public", analyticsHandler.GetPublicDashboards)
+				dashboards.GET("/:id", analyticsHandler.GetDashboardByID)
+			}
+
+			// Analytics Data
+			analyticsData := analyticsManagement.Group("/data")
+			{
+				analyticsData.GET("/sales", analyticsHandler.GetSalesAnalytics)
+				analyticsData.GET("/traffic", analyticsHandler.GetTrafficAnalytics)
+				analyticsData.GET("/users", analyticsHandler.GetUserAnalytics)
+				analyticsData.GET("/inventory", analyticsHandler.GetInventoryAnalytics)
+				analyticsData.GET("/summary", analyticsHandler.GetAnalyticsSummary)
+			}
+
+			// Events
+			events := analyticsManagement.Group("/events")
+			{
+				events.POST("", analyticsHandler.TrackEvent)
 			}
 		}
 
