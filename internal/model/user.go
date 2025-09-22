@@ -37,9 +37,12 @@ func (User) TableName() string {
 
 // BeforeCreate hook runs before creating a user
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	// Set default role if not specified (role_id = 1 for 'user' role)
+	// Set default role if not specified - get 'user' role from database
 	if u.RoleID == 0 {
-		u.RoleID = 1 // Assuming role_id 1 is 'user' role
+		var role Role
+		if err := tx.Where("name = ? AND is_active = ?", "user", true).First(&role).Error; err == nil {
+			u.RoleID = role.ID
+		}
 	}
 	return nil
 }
@@ -60,4 +63,22 @@ func (u *User) IsAdmin() bool {
 // IsModerator checks if user is moderator or admin
 func (u *User) IsModerator() bool {
 	return u.UserRole != nil && (u.UserRole.Name == "moderator" || u.UserRole.Name == "admin")
+}
+
+// HasRole checks if user has a specific role
+func (u *User) HasRole(roleName string) bool {
+	return u.UserRole != nil && u.UserRole.Name == roleName
+}
+
+// HasAnyRole checks if user has any of the specified roles
+func (u *User) HasAnyRole(roleNames ...string) bool {
+	if u.UserRole == nil {
+		return false
+	}
+	for _, roleName := range roleNames {
+		if u.UserRole.Name == roleName {
+			return true
+		}
+	}
+	return false
 }

@@ -213,7 +213,8 @@ SELECT
     'immediate',
     'UTC'
 FROM users u
-WHERE u.role = 'user';
+JOIN roles r ON u.role_id = r.id
+WHERE r.name = 'user';
 
 INSERT INTO notification_preferences (user_id, type, channel, is_enabled, frequency, timezone)
 SELECT 
@@ -224,7 +225,8 @@ SELECT
     'immediate',
     'UTC'
 FROM users u
-WHERE u.role = 'user';
+JOIN roles r ON u.role_id = r.id
+WHERE r.name = 'user';
 
 INSERT INTO notification_preferences (user_id, type, channel, is_enabled, frequency, timezone)
 SELECT 
@@ -235,7 +237,8 @@ SELECT
     'immediate',
     'UTC'
 FROM users u
-WHERE u.role = 'user';
+JOIN roles r ON u.role_id = r.id
+WHERE r.name = 'user';
 
 INSERT INTO notification_preferences (user_id, type, channel, is_enabled, frequency, timezone)
 SELECT 
@@ -246,7 +249,8 @@ SELECT
     'immediate',
     'UTC'
 FROM users u
-WHERE u.role = 'user';
+JOIN roles r ON u.role_id = r.id
+WHERE r.name = 'user';
 
 INSERT INTO notification_preferences (user_id, type, channel, is_enabled, frequency, timezone)
 SELECT 
@@ -257,7 +261,8 @@ SELECT
     'daily',
     'UTC'
 FROM users u
-WHERE u.role = 'user';
+JOIN roles r ON u.role_id = r.id
+WHERE r.name = 'user';
 
 INSERT INTO notification_preferences (user_id, type, channel, is_enabled, frequency, timezone)
 SELECT 
@@ -268,7 +273,8 @@ SELECT
     'immediate',
     'UTC'
 FROM users u
-WHERE u.role = 'user';
+JOIN roles r ON u.role_id = r.id
+WHERE r.name = 'user';
 
 INSERT INTO notification_preferences (user_id, type, channel, is_enabled, frequency, timezone)
 SELECT 
@@ -279,7 +285,8 @@ SELECT
     'immediate',
     'UTC'
 FROM users u
-WHERE u.role = 'user';
+JOIN roles r ON u.role_id = r.id
+WHERE r.name = 'user';
 
 INSERT INTO notification_preferences (user_id, type, channel, is_enabled, frequency, timezone)
 SELECT 
@@ -290,7 +297,8 @@ SELECT
     'immediate',
     'UTC'
 FROM users u
-WHERE u.role = 'user';
+JOIN roles r ON u.role_id = r.id
+WHERE r.name = 'user';
 
 -- +migrate Down
 DROP TABLE IF EXISTS notification_stats;

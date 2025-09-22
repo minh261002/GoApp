@@ -97,42 +97,14 @@ func (m *AuthMiddleware) AuthMiddleware() gin.HandlerFunc {
 
 // AdminMiddleware checks if user is admin
 func (m *AuthMiddleware) AdminMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		role, exists := c.Get("role")
-		if !exists {
-			response.ErrorResponse(c, http.StatusUnauthorized, "Role not found")
-			c.Abort()
-			return
-		}
-
-		if role != "admin" {
-			response.ErrorResponse(c, http.StatusForbidden, "Admin access required")
-			c.Abort()
-			return
-		}
-
-		c.Next()
-	}
+	roleHelper := NewRoleHelper()
+	return roleHelper.RequireRole("admin")
 }
 
 // ModeratorMiddleware checks if user is moderator or admin
 func (m *AuthMiddleware) ModeratorMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		role, exists := c.Get("role")
-		if !exists {
-			response.ErrorResponse(c, http.StatusUnauthorized, "Role not found")
-			c.Abort()
-			return
-		}
-
-		if role != "admin" && role != "moderator" {
-			response.ErrorResponse(c, http.StatusForbidden, "Moderator or admin access required")
-			c.Abort()
-			return
-		}
-
-		c.Next()
-	}
+	roleHelper := NewRoleHelper()
+	return roleHelper.RequireAnyRole("admin", "moderator")
 }
 
 // OptionalAuthMiddleware validates JWT token if present but doesn't require it
