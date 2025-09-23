@@ -26,7 +26,7 @@ func NewLogger() *Logger {
 	// Cấu hình log level
 	logLevel := os.Getenv("LOG_LEVEL")
 	if logLevel == "" {
-		logLevel = "info"
+		logLevel = "warn" // Giảm log mặc định từ info xuống warn
 	}
 
 	level, err := logrus.ParseLevel(logLevel)
